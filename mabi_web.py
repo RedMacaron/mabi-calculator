@@ -4,8 +4,8 @@ import urllib.parse
 import time
 
 # =========================================================
-# [설정 1] 본인의 넥슨 API 키를 입력하세요 (따옴표 필수)
-FIXED_API_KEY = "test_e120ab983233c28b080ec9820192d670e9d4ba97f7d9a3fe0246b29642035136efe8d04e6d233bd35cf2fabdeb93fb0d"
+# 금고(Secrets)에서 꺼내옴
+FIXED_API_KEY = st.secrets["my_api_key"]
 
 # [설정 2] 이번 주 물교 6티어 재료 (여기서 직접 수정하면 반영됩니다)
 # 형식 -> "아이템이름": 개수,
@@ -148,3 +148,4 @@ if st.session_state.cart:
             st.metric("1/N (절반)", f"{int(total_cart/2):,} Gold")
             
         st.table(cart_result)
+
