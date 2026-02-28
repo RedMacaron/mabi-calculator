@@ -114,7 +114,20 @@ with st.form("add_item_form", clear_on_submit=True):
 # 장바구니 목록 및 검색 버튼
 if st.session_state.cart:
     st.write(f"현재 담긴 품목: {len(st.session_state.cart)}개")
-    st.table(st.session_state.cart)
+    
+    # 개별 아이템 삭제 기능
+    for i, item in enumerate(st.session_state.cart):
+        col_name, col_count, col_btn = st.columns([3, 1, 1])
+        with col_name:
+            st.write(item['name'])
+        with col_count:
+            st.write(f"{item['count']}개")
+        with col_btn:
+            if st.button("삭제", key=f"del_cart_{i}"):
+                st.session_state.cart.pop(i)
+                st.rerun()
+    
+    st.divider() 
     
     if st.button("목록 비우기 🗑️"):
         st.session_state.cart = []
@@ -141,11 +154,8 @@ if st.session_state.cart:
             
         bar2.empty()
         
-        c_res1, c_res2 = st.columns(2)
-        with c_res1:
-            st.metric("장바구니 총액", f"{total_cart:,} Gold")
-        with c_res2:
-            st.metric("1/N (절반)", f"{int(total_cart/2):,} Gold")
+        # 절반 표기 제거
+        st.metric("장바구니 총액", f"{total_cart:,} Gold")
             
         st.table(cart_result)
 
@@ -252,6 +262,7 @@ st.markdown("""
 - **힐러:** 생명력 500 포션
 - **서점:** 마법의 깃털펜
 """)
+
 
 
 
