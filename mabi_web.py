@@ -6,6 +6,8 @@ import pandas as pd
 import gspread
 import json
 import plotly.express as px
+import base64
+import os
 from oauth2client.service_account import ServiceAccountCredentials
 
 # =========================================================
@@ -410,12 +412,23 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
 
-# 아이템 정보와 이미지를 나란히 렌더링해주는 헬퍼 함수
-def display_item_with_image(item_name, price, img_url="https://via.placeholder.com/30"):
-    # img_url 부분에 실제 게임 아이템 이미지 인터넷 주소를 넣으면 완벽하게 적용됩니다.
+# 아이템 정보와 로컬 이미지를 나란히 렌더링해주는 헬퍼 함수
+def display_item_with_local_image(item_name, price):
+    # 이미지 폴더 경로 설정 (파이썬 파일과 같은 위치의 images 폴더)
+    image_path = f"images/{item_name}.png"
+    
+    # 이미지가 폴더에 존재하는지 확인
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+            img_src = f"data:image/png;base64,{encoded_string}"
+    else:
+        # 이미지가 없을 경우 빈 네모난 기본 이미지 출력
+        img_src = "https://via.placeholder.com/30" 
+
     html_code = f"""
     <div style="display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-        <img src="{img_url}" style="width: 30px; height: 30px; margin-right: 10px; border-radius: 5px;">
+        <img src="{img_src}" style="width: 30px; height: 30px; margin-right: 10px; border-radius: 5px; background-color: transparent;">
         <span style="flex-grow: 1; font-size: 14px;">{item_name}</span>
         <strong style="font-size: 15px;">{int(price):,} G</strong>
     </div>
@@ -483,7 +496,7 @@ if not df_history.empty:
     for idx, item in enumerate(CATEGORIES["기본 생산품"]):
         with cols_basic[idx % 3]:
             price = latest_data.get(item, 0)
-            display_item_with_image(item, price)
+            display_item_with_local_image(item, price)
             
     st.divider()
     
@@ -495,25 +508,25 @@ if not df_history.empty:
         st.markdown("**풍요로운 마법의 솥**")
         for item in CATEGORIES["풍요로운 마법의 솥"]:
             price = latest_data.get(item, 0)
-            display_item_with_image(item, price)
+            display_item_with_local_image(item, price)
             
         st.write("") # 간격 띄우기
         st.markdown("**반짝이는 마법의 솥**")
         for item in CATEGORIES["반짝이는 마법의 솥"]:
             price = latest_data.get(item, 0)
-            display_item_with_image(item, price)
+            display_item_with_local_image(item, price)
             
     with col2:
         st.markdown("**부드러운 마법의 솥**")
         for item in CATEGORIES["부드러운 마법의 솥"]:
             price = latest_data.get(item, 0)
-            display_item_with_image(item, price)
+            display_item_with_local_image(item, price)
             
-        st.write("")
+        st.write("") # 간격 띄우기
         st.markdown("**섬세한 마법의 솥**")
         for item in CATEGORIES["섬세한 마법의 솥"]:
             price = latest_data.get(item, 0)
-            display_item_with_image(item, price)
+            display_item_with_local_image(item, price)
 
     st.divider()
 
@@ -548,6 +561,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
