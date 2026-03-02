@@ -34,14 +34,25 @@ st.set_page_config(page_title="마비노기 물교&경매장 계산기", layout=
 st.markdown(
     """
     <style>
-    /* 메인 배경색 변경 */
+    /* 1. 메인 배경색을 다크그레이로 변경 */
     .stApp {
-        background-color: #f5f5f5; /* 연한 회색 예시 */
+        background-color: #262730; 
     }
     
-    /* 헤더(상단바) 투명도 조절이 필요할 때 */
+    /* 2. 전체 기본 글자색을 밝게 설정 */
+    .stApp, .stMarkdown, p, span {
+        color: #FAFAFA !important;
+    }
+
+    /* 3. 헤더 투명화 */
     header {
         background-color: rgba(0,0,0,0) !important;
+    }
+
+    /* 4. 박스(Container) 디자인이 배경과 구분되도록 색상 조정 */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #31333F !important;
+        border: 1px solid #464855 !important;
     }
     </style>
     """,
@@ -599,6 +610,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
