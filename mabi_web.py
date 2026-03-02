@@ -305,6 +305,11 @@ with col_q1:
         label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
         if st.checkbox(label, key=f"chk_{q_name}"):
             selected_quests.append(q_name)
+            
+        # 재료 목록 텍스트 생성 (작은 폰트)
+        mat_str = ", ".join([f"{k} {v}개" for k, v in q_info['materials'].items()])
+        st.caption(f"└ {mat_str}")
+        st.write("") # 퀘스트 간 여백 띄우기
 
 # 오른쪽 열 체크박스
 with col_q2:
@@ -313,6 +318,11 @@ with col_q2:
         label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
         if st.checkbox(label, key=f"chk_{q_name}"):
             selected_quests.append(q_name)
+            
+        # 재료 목록 텍스트 생성 (작은 폰트)
+        mat_str = ", ".join([f"{k} {v}개" for k, v in q_info['materials'].items()])
+        st.caption(f"└ {mat_str}")
+        st.write("") # 퀘스트 간 여백 띄우기
 
 if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary"):
     if not selected_quests:
@@ -364,6 +374,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
         st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
         st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
         st.table(quest_result)
+
 
 
 
