@@ -414,7 +414,7 @@ st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
 
 # 아이템 정보와 로컬 이미지를 나란히 렌더링해주는 헬퍼 함수
 def display_item_with_local_image(item_name, price):
-    # 이미지 폴더 경로 설정 (파이썬 파일과 같은 위치의 images 폴더)
+    # 이미지 폴더 경로 설정 
     image_path = f"images/{item_name}.png"
     
     # 이미지가 폴더에 존재하는지 확인
@@ -427,9 +427,11 @@ def display_item_with_local_image(item_name, price):
         img_src = "https://via.placeholder.com/30" 
 
     html_code = f"""
-    <div style="display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-        <img src="{img_src}" style="width: 30px; height: 30px; margin-right: 10px; border-radius: 5px; background-color: transparent;">
-        <span style="font-size: 14px; margin-right: 8px;">{item_name}</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background-color: rgba(150, 150, 150, 0.1);">
+        <div style="display: flex; align-items: center;">
+            <img src="{img_src}" style="width: 28px; height: 28px; margin-right: 12px; background-color: transparent;">
+            <span style="font-size: 14px;">{item_name}</span>
+        </div>
         <strong style="font-size: 15px;">{int(price):,} G</strong>
     </div>
     """
@@ -561,6 +563,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
