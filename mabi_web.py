@@ -639,14 +639,15 @@ if selected_items:
     
     fig.update_layout(
         xaxis=dict(
-            tickformat="%H:%M",  # 가로축: 시:분 표기
-            tickangle=0
+            # 년-월-일 시:분 형식으로 변경 (%Y:년, %m:월, %d:일, %H:시, %M:분)
+            tickformat="%Y-%m-%d\n%H:%M", 
+            tickangle=0 
         ),
         xaxis_title="",
         yaxis_title="가격(G)",
-        yaxis_tickformat=",",    # 세로축: 천 단위 쉼표 (k 제거)
+        yaxis_tickformat=",", # y축 쉼표 표기 및 k 제거
         legend_title_text="선택된 아이템",
-        hovermode="x unified"    # 마우스 올렸을 때 전체 정보 한눈에 보기
+        hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -655,6 +656,7 @@ if selected_items:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
