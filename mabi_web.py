@@ -535,6 +535,7 @@ if not df_history.empty:
             ),
             xaxis_title="",
             yaxis_title="가격(G)",
+            yaxis_tickformat=",", # 이 줄을 새로 추가합니다 (y축 쉼표 표기 및 k 제거)
             legend_title_text="선택된 아이템"
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -547,6 +548,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
