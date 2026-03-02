@@ -645,8 +645,6 @@ if not df_history.empty:
                 legend_title_text="선택된 아이템"
             )
             st.plotly_chart(fig, use_container_width=True)
-else:
-    st.info("아직 구글 시트에 저장된 데이터가 없습니다. 수집기를 먼저 실행하여 데이터를 쌓아주세요!")
 
 
 
@@ -654,6 +652,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
