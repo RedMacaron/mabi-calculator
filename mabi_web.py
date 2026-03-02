@@ -327,26 +327,44 @@ col_q1, col_q2 = st.columns(2)
 # 왼쪽 열 체크박스
 with col_q1:
     for q_name in quest_names[:half_idx]:
-        q_info = DELIVERY_QUESTS[q_name]
-        label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
-        if st.checkbox(label, key=f"chk_{q_name}"):
-            selected_quests.append(q_name)
+        # 테두리가 있는 박스(카드) 생성
+        with st.container(border=True):
+            q_info = DELIVERY_QUESTS[q_name]
+            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
             
-        mat_str = ", ".join([f"{k} {v}개" for k, v in q_info['materials'].items()])
-        st.caption(f"└ {mat_str}")
-        st.write("") 
+            if st.checkbox(label, key=f"chk_{q_name}"):
+                selected_quests.append(q_name)
+                
+            # 재료 목록을 둥근 태그(Badge) 디자인으로 생성
+            tags_html = ""
+            for k, v in q_info['materials'].items():
+                # 화면에 보여줄 때만 반복되는 '탈틴 농장 ' 글자를 지워서 깔끔하게 만듭니다.
+                short_name = k.replace("탈틴 농장 ", "")
+                tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
+            
+            # 체크박스 위치에 맞춰 들여쓰기(28px) 적용 후 출력
+            st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
 
 # 오른쪽 열 체크박스
 with col_q2:
     for q_name in quest_names[half_idx:]:
-        q_info = DELIVERY_QUESTS[q_name]
-        label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
-        if st.checkbox(label, key=f"chk_{q_name}"):
-            selected_quests.append(q_name)
+        # 테두리가 있는 박스(카드) 생성
+        with st.container(border=True):
+            q_info = DELIVERY_QUESTS[q_name]
+            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
             
-        mat_str = ", ".join([f"{k} {v}개" for k, v in q_info['materials'].items()])
-        st.caption(f"└ {mat_str}")
-        st.write("")
+            if st.checkbox(label, key=f"chk_{q_name}"):
+                selected_quests.append(q_name)
+                
+            # 재료 목록을 둥근 태그(Badge) 디자인으로 생성
+            tags_html = ""
+            for k, v in q_info['materials'].items():
+                short_name = k.replace("탈틴 농장 ", "")
+                tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
+            
+            # 체크박스 위치에 맞춰 들여쓰기(28px) 적용 후 출력
+            st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
+            
 
 if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary"):
     if not selected_quests:
@@ -563,6 +581,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
