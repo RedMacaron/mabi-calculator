@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 import urllib.parse
 import time
+import pandas as pd
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # =========================================================
 # 금고(Secrets)에서 꺼내옴
@@ -397,11 +400,69 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 
 
 
+# ---------------------------------------------------------
+# 섹션 6: 탈틴 농장 시세 현황 및 1주 그래프
+# ---------------------------------------------------------
+st.divider()
+st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
+
+# 구글 시트 데이터를 가져오는 함수 (1분 동안만 캐싱하여 넥슨/구글 API 절약)
+@st.cache_data(ttl=60)
+def load_sheet_data():
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        # JSON 파일명은 본인 것에 맞게 수정하세요.
+        creds = ServiceAccountCredentials.from_json_keyfile_name("profound-portal-489017-e6-43c3d252531d.json", scope)
+        client = gspread.authorize(creds)
+        sheet = client.open("Mabi_DB").sheet1
+        
+        # 시트의 모든 데이터를 불러와서 데이터프레임으로 변환
+        data = sheet.get_all_records()
+        df = pd.DataFrame(data)
+        if not df.empty:
+            df = df.set_index('시간')
+        return df
+    except Exception as e:
+        st.error(f"구글 시트 연동 오류: {e}")
+        return pd.DataFrame()
+
+df_history = load_sheet_data()
+
+if not df_history.empty:
+    # 1. 가장 최근 기록된 데이터 가져오기
+    latest_data = df_history.iloc[-1]
+    
+    st.write("### 💡 현재 최신 경매장 시세")
+    
+    # 3개씩 가로로 배치하여 모니터 공간 절약
+    cols = st.columns(3)
+    idx = 0
+    for item_name, price in latest_data.items():
+        with cols[idx % 3]:
+            st.metric(label=item_name, value=f"{int(price):,} G")
+        idx += 1
+        
+    st.write("")
+
+    # 2. 시간대별 시세 변동 그래프
+    st.write("### 📊 최근 시세 변동 추이")
+    
+    # 그래프에 선이 너무 많으면 보기 힘드므로, 직접 선택할 수 있는 멀티 셀렉트 박스 추가
+    item_list = df_history.columns.tolist()
+    selected_items = st.multiselect("그래프에서 확인할 아이템을 선택하세요", item_list, default=item_list[:2])
+    
+    if selected_items:
+        st.line_chart(df_history[selected_items])
+else:
+    st.info("아직 구글 시트에 저장된 데이터가 없습니다. 수집기를 먼저 실행하여 데이터를 쌓아주세요!")
+
+
 
 
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
