@@ -26,6 +26,7 @@ st.set_page_config(page_title="마비노기 물교&경매장 계산기", layout=
 st.title("💰 마비노기 물교 & 경매장 계산기")
 
 # API 호출 함수 (공통 사용)
+@st.cache_data(ttl=60)
 def get_price(item_name, key):
     url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item_name)}"
     headers = {"x-nxopen-api-key": key, "accept": "application/json"}
@@ -400,6 +401,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 
 
 
+st.caption("Data based on NEXON Open API")
 
 
 
