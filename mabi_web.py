@@ -624,34 +624,38 @@ if not df_history.empty:
     st.divider()
 
 # 3. 시간대별 시세 변동 그래프 (Plotly 적용)
-        st.write("### 📊 최근 시세 변동 추이")
-        
-        item_list = df_history.columns.tolist()
-        selected_items = st.multiselect("그래프에서 확인할 아이템을 선택하세요", item_list, default=item_list[:2])
-        
-        if selected_items:
-            # 시간 문자열을 datetime 객체로 변환하여 차트가 날짜로 인식하게 처리
-            df_history.index = pd.to_datetime(df_history.index)
-            
-            fig = px.line(df_history[selected_items], template="plotly_dark") # 다크 모드 템플릿 적용
-            fig.update_layout(
-                xaxis=dict(
-                    tickformat="%H:%M", # 시간:분 형식으로 변경
-                    tickangle=0 # 가로축 텍스트 회전 각도 0으로 고정
-                ),
-                xaxis_title="",
-                yaxis_title="가격(G)",
-                yaxis_tickformat=",", # y축 쉼표 표기 및 k 제거
-                legend_title_text="선택된 아이템"
-            )
-            st.plotly_chart(fig, use_container_width=True)
 
+st.write("### 📊 최근 시세 변동 추이")
+
+item_list = df_history.columns.tolist()
+selected_items = st.multiselect("그래프에서 확인할 아이템을 선택하세요", item_list, default=item_list[:2])
+
+if selected_items:
+    # 시간 문자열을 datetime 객체로 변환
+    df_history.index = pd.to_datetime(df_history.index)
+    
+    # 그래프 생성 (다크 템플릿 적용)
+    fig = px.line(df_history[selected_items], template="plotly_dark")
+    
+    fig.update_layout(
+        xaxis=dict(
+            tickformat="%H:%M",  # 가로축: 시:분 표기
+            tickangle=0
+        ),
+        xaxis_title="",
+        yaxis_title="가격(G)",
+        yaxis_tickformat=",",    # 세로축: 천 단위 쉼표 (k 제거)
+        legend_title_text="선택된 아이템",
+        hovermode="x unified"    # 마우스 올렸을 때 전체 정보 한눈에 보기
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 
 
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
