@@ -4,6 +4,7 @@ import urllib.parse
 import time
 import pandas as pd
 import gspread
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 # =========================================================
@@ -411,12 +412,14 @@ st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
 def load_sheet_data():
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        # JSON 파일명은 본인 것에 맞게 수정하세요.
-        creds = ServiceAccountCredentials.from_json_keyfile_name(";;", scope)
+        
+        # 스트림릿 비밀 금고(secrets)에서 문자열을 꺼내 딕셔너리로 변환합니다.
+        creds_dict = json.loads(st.secrets["google_credentials"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        
         client = gspread.authorize(creds)
         sheet = client.open("Mabi_DB").sheet1
         
-        # 시트의 모든 데이터를 불러와서 데이터프레임으로 변환
         data = sheet.get_all_records()
         df = pd.DataFrame(data)
         if not df.empty:
@@ -462,6 +465,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
