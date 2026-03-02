@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import gspread
 import json
+import plotly.express as px
 from oauth2client.service_account import ServiceAccountCredentials
 
 # =========================================================
@@ -402,21 +403,59 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 
 
 # ---------------------------------------------------------
-# 섹션 6: 탈틴 농장 시세 현황 및 1주 그래프
+# 섹션 4: 탈틴 농장 시세 현황 및 1주 그래프
 # ---------------------------------------------------------
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
 
-# 구글 시트 데이터를 가져오는 함수 (1분 동안만 캐싱하여 넥슨/구글 API 절약)
+# 아이템 정보와 이미지를 나란히 렌더링해주는 헬퍼 함수
+def display_item_with_image(item_name, price, img_url="https://via.placeholder.com/30"):
+    # img_url 부분에 실제 게임 아이템 이미지 인터넷 주소를 넣으면 완벽하게 적용됩니다.
+    html_code = f"""
+    <div style="display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+        <img src="{img_url}" style="width: 30px; height: 30px; margin-right: 10px; border-radius: 5px;">
+        <span style="flex-grow: 1; font-size: 14px;">{item_name}</span>
+        <strong style="font-size: 15px;">{int(price):,} G</strong>
+    </div>
+    """
+    st.markdown(html_code, unsafe_allow_html=True)
+
+# 아이템 분류 데이터
+CATEGORIES = {
+    "기본 생산품": [
+        "탈틴 농장 일반 블랙베리", "탈틴 농장 고급 블랙베리", "탈틴 농장 최고급 블랙베리",
+        "탈틴 농장 일반 오크라", "탈틴 농장 고급 오크라", "탈틴 농장 최고급 오크라",
+        "탈틴 농장 일반 재스민", "탈틴 농장 고급 재스민", "탈틴 농장 최고급 재스민",
+        "탈틴 농장 일반 붉은 배", "탈틴 농장 고급 붉은 배", "탈틴 농장 최고급 붉은 배",
+        "탈틴 농장 일반 고무", "탈틴 농장 고급 고무", "탈틴 농장 최고급 고무",
+        "탈틴 농장 일반 마법 거미줄", "탈틴 농장 고급 마법 거미줄", "탈틴 농장 최고급 마법 거미줄",
+        "탈틴 농장 일반 석영", "탈틴 농장 고급 석영", "탈틴 농장 최고급 석영"
+    ],
+    "풍요로운 마법의 솥": [
+        "탈틴 농장 블랙베리 주스", "탈틴 농장 달콤 케이크", "탈틴 농장 붉은 배 잼", 
+        "탈틴 농장 별무늬 샐러드", "탈틴 농장 재스민 향수"
+    ],
+    "부드러운 마법의 솥": [
+        "탈틴 농장 자색 원단", "탈틴 농장 꽃무늬 원피스", "탈틴 농장 방수 원단", 
+        "탈틴 농장 강화 섬유", "탈틴 농장 이브닝 드레스"
+    ],
+    "반짝이는 마법의 솥": [
+        "탈틴 농장 레드문 귀걸이", "탈틴 농장 퓨어 블러썸 머리핀", "탈틴 농장 석영 파우더", 
+        "탈틴 농장 미드나잇 펄 페인트", "탈틴 농장 장식용 크리스탈 검"
+    ],
+    "섬세한 마법의 솥": [
+        "탈틴 농장 강력 접착제", "탈틴 농장 천연 고무", "탈틴 농장 누름꽃 공예 함", 
+        "탈틴 농장 황혼의 류트", "탈틴 농장 새벽의 활"
+    ]
+}
+
+# 구글 시트 데이터 로드 (함수는 기존과 동일)
 @st.cache_data(ttl=60)
 def load_sheet_data():
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        
-        # 스트림릿 비밀 금고(secrets)에서 문자열을 꺼내 딕셔너리로 변환합니다.
         creds_dict = json.loads(st.secrets["google_credentials"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        
         client = gspread.authorize(creds)
         sheet = client.open("Mabi_DB").sheet1
         
@@ -432,30 +471,71 @@ def load_sheet_data():
 df_history = load_sheet_data()
 
 if not df_history.empty:
-    # 1. 가장 최근 기록된 데이터 가져오기
     latest_data = df_history.iloc[-1]
     
     st.write("### 💡 현재 최신 경매장 시세")
     
-    # 3개씩 가로로 배치하여 모니터 공간 절약
-    cols = st.columns(3)
-    idx = 0
-    for item_name, price in latest_data.items():
-        with cols[idx % 3]:
-            st.metric(label=item_name, value=f"{int(price):,} G")
-        idx += 1
-        
-    st.write("")
+    # 1. 기본 생산품 파트 (3열 배치)
+    st.subheader("기본 생산품")
+    cols_basic = st.columns(3)
+    for idx, item in enumerate(CATEGORIES["기본 생산품"]):
+        with cols_basic[idx % 3]:
+            price = latest_data.get(item, 0)
+            display_item_with_image(item, price)
+            
+    st.divider()
+    
+    # 2. 가공품 파트 (2열 분할 후 각각 솥 배치)
+    st.subheader("가공품")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**풍요로운 마법의 솥**")
+        for item in CATEGORIES["풍요로운 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_image(item, price)
+            
+        st.write("") # 간격 띄우기
+        st.markdown("**반짝이는 마법의 솥**")
+        for item in CATEGORIES["반짝이는 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_image(item, price)
+            
+    with col2:
+        st.markdown("**부드러운 마법의 솥**")
+        for item in CATEGORIES["부드러운 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_image(item, price)
+            
+        st.write("")
+        st.markdown("**섬세한 마법의 솥**")
+        for item in CATEGORIES["섬세한 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_image(item, price)
 
-    # 2. 시간대별 시세 변동 그래프
+    st.divider()
+
+    # 3. 시간대별 시세 변동 그래프 (Plotly 적용)
     st.write("### 📊 최근 시세 변동 추이")
     
-    # 그래프에 선이 너무 많으면 보기 힘드므로, 직접 선택할 수 있는 멀티 셀렉트 박스 추가
     item_list = df_history.columns.tolist()
     selected_items = st.multiselect("그래프에서 확인할 아이템을 선택하세요", item_list, default=item_list[:2])
     
     if selected_items:
-        st.line_chart(df_history[selected_items])
+        # 시간 문자열을 datetime 객체로 변환하여 차트가 날짜로 인식하게 처리
+        df_history.index = pd.to_datetime(df_history.index)
+        
+        fig = px.line(df_history[selected_items])
+        fig.update_layout(
+            xaxis=dict(
+                tickformat="%Y-%m-%d", # 년-월-일 까지만 표기
+                tickangle=0 # 가로축 텍스트 회전 각도 0으로 고정
+            ),
+            xaxis_title="",
+            yaxis_title="가격(G)",
+            legend_title_text="선택된 아이템"
+        )
+        st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("아직 구글 시트에 저장된 데이터가 없습니다. 수집기를 먼저 실행하여 데이터를 쌓아주세요!")
 
@@ -465,6 +545,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
