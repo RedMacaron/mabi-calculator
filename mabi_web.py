@@ -34,44 +34,47 @@ st.set_page_config(page_title="마비노기 물교&경매장 계산기", layout=
 st.markdown(
     """
     <style>
-    /* 1. 전체 앱 배경 및 기본 글자색 */
+    /* 1. 전체 배경색 (눈이 편한 짙은 네이비 그레이) */
     .stApp {
-        background-color: #1E1E26; /* 조금 더 깊은 다크그레이 */
+        background-color: #1a1c24;
     }
 
-    /* 2. 일반 텍스트 가독성 확보 */
-    .stApp p, .stApp span, .stApp label, .stApp li {
-        color: #E0E0E0 !important;
+    /* 2. 모든 일반 텍스트를 선명한 흰색으로 강제 설정 */
+    /* p, span, li, label 등 모든 요소 포함 */
+    .stApp p, .stApp span, .stApp label, .stApp li, .stApp div {
+        color: #ffffff !important;
+        font-weight: 500; /* 글자를 아주 살짝 두껍게 하여 선명도 향상 */
     }
     
-    /* 3. 제목(Header) 색상 강조 */
+    /* 3. 제목(Header) 선명도 강화 */
     .stApp h1, .stApp h2, .stApp h3 {
-        color: #FFFFFF !important;
-        font-weight: 700;
+        color: #ffffff !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* 글자 테두리에 그림자를 주어 더 또렷하게 함 */
     }
 
-    /* 4. JSON 뷰어 및 코드 블록 글자색 (묻히는 현상 방지) */
+    /* 4. 리스트(JSON) 및 코드 영역 가독성 (가장 큰 문제 해결) */
+    /* 내부 글자색을 밝은 노란색/연두색 계열로 바꾸어 배경과 분리 */
     div[data-testid="stJson"] pre {
-        color: #FFD700 !important; /* 금색 계열로 포인트 */
-        background-color: #2D2D39 !important;
+        color: #f1f1f1 !important;
+        background-color: #262730 !important;
     }
+    .string { color: #ce9178 !important; } /* 문자열 값 색상 */
+    .number { color: #b5cea8 !important; } /* 숫자 값 색상 */
 
-    /* 5. 카드 박스(Container) 디자인 */
+    /* 5. 카드 박스(Container) 배경을 조금 더 밝게 하여 텍스트 부각 */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #2D2D39 !important;
-        border: 1px solid #3F404D !important;
-        border-radius: 10px;
+        background-color: #2d303d !important;
+        border: 1px solid #4a4d5e !important;
     }
 
-    /* 6. 입력창(Text Input) 내부 글자색 수정 */
-    input {
-        color: #FFFFFF !important;
-        background-color: #3F404D !important;
+    /* 6. 데이터프레임/표(Table) 내부 글자색 선명화 */
+    .stTable td, .stTable th {
+        color: #ffffff !important;
     }
 
-    /* 7. 메트릭(숫자 강조) 색상 */
-    div[data-testid="stMetricValue"] {
-        color: #00FFC8 !important; /* 민트색으로 강조 */
+    /* 7. 입력창 및 버튼 텍스트 가독성 */
+    input, button p {
+        color: #ffffff !important;
     }
     </style>
     """,
@@ -629,6 +632,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
