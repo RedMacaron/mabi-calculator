@@ -45,39 +45,55 @@ st.markdown(
         font-weight: 500;
     }
 
-    /* 3. 하얗게 날아가는 위젯(JSON, Table 등) 배경 강제 지정 */
-    /* st.json, st.write(dict) 등이 들어가는 영역 */
-    div[data-testid="stJson"] pre, div.stCodeBlock pre {
+    /* 3. 흰색 박스(JSON 뷰어) 문제 해결 */
+    /* st.json 및 딕셔너리 출력 영역의 배경을 어둡게 강제 고정 */
+    div[data-testid="stJson"], div[data-testid="stJson"] pre {
         background-color: #262730 !important;
         color: #ffffff !important;
+        border-radius: 5px;
     }
     
-    /* 표(st.table) 내부 배경색 및 글자색 교정 */
+    /* 4. 표(Table) 가독성 수정 */
     .stTable {
         background-color: #262730 !important;
-        color: #ffffff !important;
     }
-    .stTable td, .stTable th {
-        border-bottom: 1px solid #3f404d !important;
+    .stTable th {
+        background-color: #31333f !important;
         color: #ffffff !important;
+        font-weight: bold;
+    }
+    .stTable td {
+        color: #e0e0e0 !important;
+        border-bottom: 1px solid #3f404d !important;
     }
 
-    /* 4. 접었다 폈다 하는 익스펜더(st.expander) 배경색 교정 */
-    .streamlit-expanderHeader {
+    /* 5. 익스펜더(접이식 메뉴) 내부 흰색 배경 제거 */
+    div[data-testid="stExpander"] {
         background-color: #2d303d !important;
-        color: #ffffff !important;
+        border: 1px solid #4a4d5e !important;
+        border-radius: 8px;
     }
-    .streamlit-expanderContent {
+    div[data-testid="stExpander"] .streamlit-expanderHeader {
+        color: #ffffff !important;
+        background-color: transparent !important;
+    }
+    div[data-testid="stExpander"] .streamlit-expanderContent {
         background-color: #262730 !important;
         color: #ffffff !important;
     }
 
-    /* 5. 메트릭(숫자) 영역 글자색 */
+    /* 6. 입력창 및 버튼 텍스트 색상 */
+    input {
+        color: #ffffff !important;
+        background-color: #3f404d !important;
+    }
+    
+    /* 7. 메트릭(숫자 강조) 색상 */
     div[data-testid="stMetricValue"] {
         color: #00ffc8 !important;
     }
-    
-    /* 6. 카드 박스(Container) 디자인 */
+
+    /* 8. 생활 협회 리스트 카드 디자인 */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #2d303d !important;
         border: 1px solid #4a4d5e !important;
@@ -638,6 +654,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
