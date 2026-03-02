@@ -392,8 +392,10 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
             
         progress_bar.empty()
         
-        # 결과 출력
+        # 결과 출력 부분
         st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
+        
+        # 여기서 숫자를 직접 넣지 않고 f"{quest_total_price:,} Gold" 처럼 글자로 감싸야 k가 나오지 않습니다.
         st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
         st.table(quest_result)
 
@@ -403,7 +405,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 
 
 # ---------------------------------------------------------
-# 섹션 4: 탈틴 농장 시세 현황 및 1주 그래프
+# 섹션 6: 탈틴 농장 시세 현황 및 1주 그래프
 # ---------------------------------------------------------
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
@@ -545,6 +547,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
