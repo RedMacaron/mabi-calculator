@@ -426,7 +426,7 @@ def display_item_with_local_image(item_name, price):
         # 이미지가 없을 경우 빈 네모난 기본 이미지 출력
         img_src = "https://via.placeholder.com/30" 
 
-html_code = f"""
+    html_code = f"""
     <div style="display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
         <img src="{img_src}" style="width: 30px; height: 30px; margin-right: 10px; border-radius: 5px; background-color: transparent;">
         <span style="font-size: 14px; margin-right: 8px;">{item_name}</span>
@@ -561,6 +561,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
