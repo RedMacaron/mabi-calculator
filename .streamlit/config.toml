@@ -1,0 +1,8 @@
+[theme]
+primaryColor = "#ff4b4b"
+backgroundColor = "#1a1c24"
+secondaryBackgroundColor = "#262730"
+textColor = "#ffffff"
+font = "sans serif"
+# 이 아래 줄이 핵심입니다. 시스템 설정을 무시하고 다크 모드로 고정합니다.
+base = "dark"
