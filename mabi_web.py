@@ -291,12 +291,30 @@ DELIVERY_QUESTS = {
     "라흐 왕성 시종의 주문": {"limit": 5, "coin": 640, "materials": {"탈틴 농장 재스민 향수": 2, "탈틴 농장 장식용 크리스탈 검": 2, "탈틴 농장 새벽의 활": 2}}
 }
 
-# 퀘스트 목록을 2개의 열로 나누어 배치
-col_q1, col_q2 = st.columns(2)
+# 퀘스트 목록을 2개의 열로 나누어 배치 전 설정
 quest_names = list(DELIVERY_QUESTS.keys())
 half_idx = len(quest_names) // 2 + 1
 
+# 체크박스 상태 관리를 위한 세션 초기화
+for q_name in quest_names:
+    if f"chk_{q_name}" not in st.session_state:
+        st.session_state[f"chk_{q_name}"] = False
+
+# 전체 선택 및 해제 버튼 배치
+col_btn1, col_btn2, _ = st.columns([1, 1, 4])
+with col_btn1:
+    if st.button("전체 선택"):
+        for q_name in quest_names:
+            st.session_state[f"chk_{q_name}"] = True
+with col_btn2:
+    if st.button("전체 해제"):
+        for q_name in quest_names:
+            st.session_state[f"chk_{q_name}"] = False
+
 selected_quests = []
+
+# 퀘스트 목록을 2개의 열로 나누어 배치
+col_q1, col_q2 = st.columns(2)
 
 # 왼쪽 열 체크박스
 with col_q1:
@@ -306,10 +324,9 @@ with col_q1:
         if st.checkbox(label, key=f"chk_{q_name}"):
             selected_quests.append(q_name)
             
-        # 재료 목록 텍스트 생성 (작은 폰트)
         mat_str = ", ".join([f"{k} {v}개" for k, v in q_info['materials'].items()])
         st.caption(f"└ {mat_str}")
-        st.write("") # 퀘스트 간 여백 띄우기
+        st.write("") 
 
 # 오른쪽 열 체크박스
 with col_q2:
@@ -319,10 +336,9 @@ with col_q2:
         if st.checkbox(label, key=f"chk_{q_name}"):
             selected_quests.append(q_name)
             
-        # 재료 목록 텍스트 생성 (작은 폰트)
         mat_str = ", ".join([f"{k} {v}개" for k, v in q_info['materials'].items()])
         st.caption(f"└ {mat_str}")
-        st.write("") # 퀘스트 간 여백 띄우기
+        st.write("")
 
 if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary"):
     if not selected_quests:
@@ -374,6 +390,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
         st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
         st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
         st.table(quest_result)
+
 
 
 
