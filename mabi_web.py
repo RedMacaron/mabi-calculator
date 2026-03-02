@@ -301,13 +301,13 @@ for q_name in quest_names:
         st.session_state[f"chk_{q_name}"] = False
 
 # 전체 선택 및 해제 버튼 배치
-col_btn1, col_btn2, _ = st.columns([1, 1, 4])
+col_btn1, col_btn2, _ = st.columns([1, 1, 6])
 with col_btn1:
-    if st.button("전체 선택"):
+    if st.button("전체 선택", use_container_width=True, type="primary"):
         for q_name in quest_names:
             st.session_state[f"chk_{q_name}"] = True
 with col_btn2:
-    if st.button("전체 해제"):
+    if st.button("전체 해제", use_container_width=True):
         for q_name in quest_names:
             st.session_state[f"chk_{q_name}"] = False
 
@@ -390,6 +390,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
         st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
         st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
         st.table(quest_result)
+
 
 
 
