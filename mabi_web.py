@@ -412,7 +412,7 @@ def load_sheet_data():
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         # JSON 파일명은 본인 것에 맞게 수정하세요.
-        creds = ServiceAccountCredentials.from_json_keyfile_name("profound-portal-489017-e6-43c3d252531d.json", scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_name(";;", scope)
         client = gspread.authorize(creds)
         sheet = client.open("Mabi_DB").sheet1
         
@@ -462,6 +462,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
