@@ -34,25 +34,44 @@ st.set_page_config(page_title="마비노기 물교&경매장 계산기", layout=
 st.markdown(
     """
     <style>
-    /* 1. 메인 배경색을 다크그레이로 변경 */
+    /* 1. 전체 앱 배경 및 기본 글자색 */
     .stApp {
-        background-color: #262730; 
+        background-color: #1E1E26; /* 조금 더 깊은 다크그레이 */
+    }
+
+    /* 2. 일반 텍스트 가독성 확보 */
+    .stApp p, .stApp span, .stApp label, .stApp li {
+        color: #E0E0E0 !important;
     }
     
-    /* 2. 전체 기본 글자색을 밝게 설정 */
-    .stApp, .stMarkdown, p, span {
-        color: #FAFAFA !important;
+    /* 3. 제목(Header) 색상 강조 */
+    .stApp h1, .stApp h2, .stApp h3 {
+        color: #FFFFFF !important;
+        font-weight: 700;
     }
 
-    /* 3. 헤더 투명화 */
-    header {
-        background-color: rgba(0,0,0,0) !important;
+    /* 4. JSON 뷰어 및 코드 블록 글자색 (묻히는 현상 방지) */
+    div[data-testid="stJson"] pre {
+        color: #FFD700 !important; /* 금색 계열로 포인트 */
+        background-color: #2D2D39 !important;
     }
 
-    /* 4. 박스(Container) 디자인이 배경과 구분되도록 색상 조정 */
+    /* 5. 카드 박스(Container) 디자인 */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #31333F !important;
-        border: 1px solid #464855 !important;
+        background-color: #2D2D39 !important;
+        border: 1px solid #3F404D !important;
+        border-radius: 10px;
+    }
+
+    /* 6. 입력창(Text Input) 내부 글자색 수정 */
+    input {
+        color: #FFFFFF !important;
+        background-color: #3F404D !important;
+    }
+
+    /* 7. 메트릭(숫자 강조) 색상 */
+    div[data-testid="stMetricValue"] {
+        color: #00FFC8 !important; /* 민트색으로 강조 */
     }
     </style>
     """,
@@ -610,6 +629,7 @@ else:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
