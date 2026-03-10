@@ -346,159 +346,6 @@ st.markdown("""
 """)
 
 # ---------------------------------------------------------
-# 섹션 5: 납품 퀘스트 계산기
-# ---------------------------------------------------------
-st.divider()
-st.header("📦 생활 협회 납품 퀘스트 계산기")
-st.caption("진행하려는 퀘스트를 체크한 후 계산하기를 누르면, 필요한 총 재료를 합산하여 경매장 최저가를 검색합니다.")
-
-# 납품 퀘스트 데이터 정리
-DELIVERY_QUESTS = {
-    "두갈드 아일 목수의 주문": {"limit": 7, "coin": 330, "materials": {"탈틴 농장 일반 블랙베리": 1, "탈틴 농장 자색 원단": 2, "탈틴 농장 붉은 배 잼": 2}},
-    "슬리아브 퀼린 광부의 주문": {"limit": 7, "coin": 240, "materials": {"탈틴 농장 일반 오크라": 1, "탈틴 농장 강력 접착제": 2, "탈틴 농장 방수 원단": 2}},
-    "레자르 양조장 관리인의 주문": {"limit": 7, "coin": 250, "materials": {"탈틴 농장 일반 재스민": 2, "탈틴 농장 레드문 귀걸이": 2, "탈틴 농장 달콤 케이크": 1}},
-    "탈틴 괴짜 연금술사의 주문": {"limit": 7, "coin": 230, "materials": {"탈틴 농장 일반 붉은 배": 1, "탈틴 농장 블랙베리 주스": 1, "탈틴 농장 석영 파우더": 1}},
-    "케안 항구 선원의 주문": {"limit": 7, "coin": 320, "materials": {"탈틴 농장 일반 고무": 2, "탈틴 농장 천연 고무": 1, "탈틴 농장 별무늬 샐러드": 1}},
-    "센마이 상점가 점원의 주문": {"limit": 7, "coin": 400, "materials": {"탈틴 농장 일반 마법 거미줄": 2, "탈틴 농장 꽃무늬 원피스": 1, "탈틴 농장 누름꽃 공예 함": 1}},
-    "반호르 시계 장인의 주문": {"limit": 7, "coin": 300, "materials": {"탈틴 농장 일반 석영": 2, "탈틴 농장 퓨어 블러썸 머리핀": 1, "탈틴 농장 강화 섬유": 1}},
-    "이멘 마하 인테리어 전문가의 주문": {"limit": 5, "coin": 320, "materials": {"탈틴 농장 자색 원단": 1, "탈틴 농장 미드나잇 펄 페인트": 2, "탈틴 농장 방수 원단": 1}},
-    "음유시인 캠프 방랑자의 주문": {"limit": 5, "coin": 700, "materials": {"탈틴 농장 퓨어 블러썸 머리핀": 2, "탈틴 농장 황혼의 류트": 1, "탈틴 농장 석영 파우더": 1}},
-    "던바튼 주민의 주문": {"limit": 5, "coin": 270, "materials": {"탈틴 농장 레드문 귀걸이": 1, "탈틴 농장 새벽의 활": 1, "탈틴 농장 누름꽃 공예 함": 1}},
-    "오스나 사일 산지기의 주문": {"limit": 5, "coin": 330, "materials": {"탈틴 농장 달콤 케이크": 1, "탈틴 농장 이브닝 드레스": 2, "탈틴 농장 붉은 배 잼": 2}},
-    "티르코네일 보부상의 주문": {"limit": 5, "coin": 400, "materials": {"탈틴 농장 강력 접착제": 2, "탈틴 농장 장식용 크리스탈 검": 1, "탈틴 농장 천연 고무": 2}},
-    "카브 항구 의상 디자이너의 주문": {"limit": 5, "coin": 650, "materials": {"탈틴 농장 블랙베리 주스": 2, "탈틴 농장 재스민 향수": 1, "탈틴 농장 꽃무늬 원피스": 1}},
-    "케안 항구 무역 사무원의 주문": {"limit": 5, "coin": 840, "materials": {"탈틴 농장 별무늬 샐러드": 2, "탈틴 농장 새벽의 활": 2, "탈틴 농장 이브닝 드레스": 2}},
-    "아브네아 상점가 점원의 주문": {"limit": 5, "coin": 320, "materials": {"탈틴 농장 강화 섬유": 2, "탈틴 농장 장식용 크리스탈 검": 2, "탈틴 농장 황혼의 류트": 2}},
-    "타라 '큰손'의 주문": {"limit": 5, "coin": 538, "materials": {"탈틴 농장 이브닝 드레스": 2, "탈틴 농장 미드나잇 펄 페인트": 2, "탈틴 농장 재스민 향수": 2}},
-    "라흐 왕성 시종의 주문": {"limit": 5, "coin": 640, "materials": {"탈틴 농장 재스민 향수": 2, "탈틴 농장 장식용 크리스탈 검": 2, "탈틴 농장 새벽의 활": 2}}
-}
-
-# 퀘스트 목록을 2개의 열로 나누어 배치 전 설정
-quest_names = list(DELIVERY_QUESTS.keys())
-half_idx = len(quest_names) // 2 + 1
-
-# 체크박스 상태 관리를 위한 세션 초기화
-for q_name in quest_names:
-    if f"chk_{q_name}" not in st.session_state:
-        st.session_state[f"chk_{q_name}"] = False
-
-# 전체 선택 및 해제 버튼 배치
-col_btn1, col_btn2, _ = st.columns([1, 1, 6])
-with col_btn1:
-    if st.button("전체 선택", use_container_width=True, type="primary"):
-        for q_name in quest_names:
-            st.session_state[f"chk_{q_name}"] = True
-with col_btn2:
-    if st.button("전체 해제", use_container_width=True):
-        for q_name in quest_names:
-            st.session_state[f"chk_{q_name}"] = False
-
-selected_quests = []
-
-# 퀘스트 목록을 2개의 열로 나누어 배치
-col_q1, col_q2 = st.columns(2)
-
-# 왼쪽 열 체크박스
-with col_q1:
-    for q_name in quest_names[:half_idx]:
-        # 테두리가 있는 박스(카드) 생성
-        with st.container(border=True):
-            q_info = DELIVERY_QUESTS[q_name]
-            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
-            
-            if st.checkbox(label, key=f"chk_{q_name}"):
-                selected_quests.append(q_name)
-                
-            # 재료 목록을 둥근 태그(Badge) 디자인으로 생성
-            tags_html = ""
-            for k, v in q_info['materials'].items():
-                # 화면에 보여줄 때만 반복되는 '탈틴 농장 ' 글자를 지워서 깔끔하게 만듭니다.
-                short_name = k.replace("탈틴 농장 ", "")
-                tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
-            
-            # 체크박스 위치에 맞춰 들여쓰기(28px) 적용 후 출력
-            st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
-
-# 오른쪽 열 체크박스
-with col_q2:
-    for q_name in quest_names[half_idx:]:
-        # 테두리가 있는 박스(카드) 생성
-        with st.container(border=True):
-            q_info = DELIVERY_QUESTS[q_name]
-            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
-            
-            if st.checkbox(label, key=f"chk_{q_name}"):
-                selected_quests.append(q_name)
-                
-            # 재료 목록을 둥근 태그(Badge) 디자인으로 생성
-            tags_html = ""
-            for k, v in q_info['materials'].items():
-                short_name = k.replace("탈틴 농장 ", "")
-                tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
-            
-            # 체크박스 위치에 맞춰 들여쓰기(28px) 적용 후 출력
-            st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
-            
-
-if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary"):
-    if not selected_quests:
-        st.warning("선택된 퀘스트가 없습니다. 위에서 퀘스트를 하나 이상 체크해주세요!")
-    else:
-        # 체크된 퀘스트의 재료 합산 및 코인 계산 로직
-        aggregated_materials = {}
-        total_coins = 0
-        
-        for q_name in selected_quests:
-            q_data = DELIVERY_QUESTS[q_name]
-            limit = q_data['limit']
-            
-            # 획득 코인 합산 (1회당 코인 * 납품가능횟수)
-            total_coins += (q_data['coin'] * limit)
-            
-            # 재료 수량 합산
-            for mat_name, mat_count in q_data['materials'].items():
-                req_qty = mat_count * limit
-                if mat_name in aggregated_materials:
-                    aggregated_materials[mat_name] += req_qty
-                else:
-                    aggregated_materials[mat_name] = req_qty
-
-        # 합산된 재료들로 경매장 API 검색 진행
-        quest_total_price = 0
-        quest_result = []
-        
-        progress_bar = st.progress(0, text="경매장 시세 조회 중...")
-        
-        for idx, (item_name, count) in enumerate(aggregated_materials.items()):
-            price = get_price(item_name, FIXED_API_KEY)
-            subtotal = price * count
-            quest_total_price += subtotal
-            
-            quest_result.append({
-                "재료명": item_name,
-                "최저가": f"{price:,} G" if price > 0 else "매물 없음",
-                "필요 수량": f"{count}개",
-                "합계": f"{subtotal:,} G"
-            })
-            
-            time.sleep(0.3) # API 보호용 딜레이
-            progress_bar.progress((idx + 1) / len(aggregated_materials))
-            
-        progress_bar.empty()
-        
-        # 결과 출력 부분
-        st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
-        
-        # 여기서 숫자를 직접 넣지 않고 f"{quest_total_price:,} Gold" 처럼 글자로 감싸야 k가 나오지 않습니다.
-        st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
-        st.table(quest_result)
-
-
-
-
-
-
-# ---------------------------------------------------------
 # 섹션 6: 탈틴 농장 시세 현황 및 1주 그래프
 # ---------------------------------------------------------
 st.divider()
@@ -770,7 +617,159 @@ if not df_history.empty:
 
 
 
+# ---------------------------------------------------------
+# 섹션 5: 납품 퀘스트 계산기
+# ---------------------------------------------------------
+st.divider()
+st.header("📦 생활 협회 납품 퀘스트 계산기")
+st.caption("진행하려는 퀘스트를 체크한 후 계산하기를 누르면, 필요한 총 재료를 합산하여 경매장 최저가를 검색합니다.")
+
+# 납품 퀘스트 데이터 정리
+DELIVERY_QUESTS = {
+    "두갈드 아일 목수의 주문": {"limit": 7, "coin": 330, "materials": {"탈틴 농장 일반 블랙베리": 1, "탈틴 농장 자색 원단": 2, "탈틴 농장 붉은 배 잼": 2}},
+    "슬리아브 퀼린 광부의 주문": {"limit": 7, "coin": 240, "materials": {"탈틴 농장 일반 오크라": 1, "탈틴 농장 강력 접착제": 2, "탈틴 농장 방수 원단": 2}},
+    "레자르 양조장 관리인의 주문": {"limit": 7, "coin": 250, "materials": {"탈틴 농장 일반 재스민": 2, "탈틴 농장 레드문 귀걸이": 2, "탈틴 농장 달콤 케이크": 1}},
+    "탈틴 괴짜 연금술사의 주문": {"limit": 7, "coin": 230, "materials": {"탈틴 농장 일반 붉은 배": 1, "탈틴 농장 블랙베리 주스": 1, "탈틴 농장 석영 파우더": 1}},
+    "케안 항구 선원의 주문": {"limit": 7, "coin": 320, "materials": {"탈틴 농장 일반 고무": 2, "탈틴 농장 천연 고무": 1, "탈틴 농장 별무늬 샐러드": 1}},
+    "센마이 상점가 점원의 주문": {"limit": 7, "coin": 400, "materials": {"탈틴 농장 일반 마법 거미줄": 2, "탈틴 농장 꽃무늬 원피스": 1, "탈틴 농장 누름꽃 공예 함": 1}},
+    "반호르 시계 장인의 주문": {"limit": 7, "coin": 300, "materials": {"탈틴 농장 일반 석영": 2, "탈틴 농장 퓨어 블러썸 머리핀": 1, "탈틴 농장 강화 섬유": 1}},
+    "이멘 마하 인테리어 전문가의 주문": {"limit": 5, "coin": 320, "materials": {"탈틴 농장 자색 원단": 1, "탈틴 농장 미드나잇 펄 페인트": 2, "탈틴 농장 방수 원단": 1}},
+    "음유시인 캠프 방랑자의 주문": {"limit": 5, "coin": 700, "materials": {"탈틴 농장 퓨어 블러썸 머리핀": 2, "탈틴 농장 황혼의 류트": 1, "탈틴 농장 석영 파우더": 1}},
+    "던바튼 주민의 주문": {"limit": 5, "coin": 270, "materials": {"탈틴 농장 레드문 귀걸이": 1, "탈틴 농장 새벽의 활": 1, "탈틴 농장 누름꽃 공예 함": 1}},
+    "오스나 사일 산지기의 주문": {"limit": 5, "coin": 330, "materials": {"탈틴 농장 달콤 케이크": 1, "탈틴 농장 이브닝 드레스": 2, "탈틴 농장 붉은 배 잼": 2}},
+    "티르코네일 보부상의 주문": {"limit": 5, "coin": 400, "materials": {"탈틴 농장 강력 접착제": 2, "탈틴 농장 장식용 크리스탈 검": 1, "탈틴 농장 천연 고무": 2}},
+    "카브 항구 의상 디자이너의 주문": {"limit": 5, "coin": 650, "materials": {"탈틴 농장 블랙베리 주스": 2, "탈틴 농장 재스민 향수": 1, "탈틴 농장 꽃무늬 원피스": 1}},
+    "케안 항구 무역 사무원의 주문": {"limit": 5, "coin": 840, "materials": {"탈틴 농장 별무늬 샐러드": 2, "탈틴 농장 새벽의 활": 2, "탈틴 농장 이브닝 드레스": 2}},
+    "아브네아 상점가 점원의 주문": {"limit": 5, "coin": 320, "materials": {"탈틴 농장 강화 섬유": 2, "탈틴 농장 장식용 크리스탈 검": 2, "탈틴 농장 황혼의 류트": 2}},
+    "타라 '큰손'의 주문": {"limit": 5, "coin": 538, "materials": {"탈틴 농장 이브닝 드레스": 2, "탈틴 농장 미드나잇 펄 페인트": 2, "탈틴 농장 재스민 향수": 2}},
+    "라흐 왕성 시종의 주문": {"limit": 5, "coin": 640, "materials": {"탈틴 농장 재스민 향수": 2, "탈틴 농장 장식용 크리스탈 검": 2, "탈틴 농장 새벽의 활": 2}}
+}
+
+# 퀘스트 목록을 2개의 열로 나누어 배치 전 설정
+quest_names = list(DELIVERY_QUESTS.keys())
+half_idx = len(quest_names) // 2 + 1
+
+# 체크박스 상태 관리를 위한 세션 초기화
+for q_name in quest_names:
+    if f"chk_{q_name}" not in st.session_state:
+        st.session_state[f"chk_{q_name}"] = False
+
+# 전체 선택 및 해제 버튼 배치
+col_btn1, col_btn2, _ = st.columns([1, 1, 6])
+with col_btn1:
+    if st.button("전체 선택", use_container_width=True, type="primary"):
+        for q_name in quest_names:
+            st.session_state[f"chk_{q_name}"] = True
+with col_btn2:
+    if st.button("전체 해제", use_container_width=True):
+        for q_name in quest_names:
+            st.session_state[f"chk_{q_name}"] = False
+
+selected_quests = []
+
+# 퀘스트 목록을 2개의 열로 나누어 배치
+col_q1, col_q2 = st.columns(2)
+
+# 왼쪽 열 체크박스
+with col_q1:
+    for q_name in quest_names[:half_idx]:
+        # 테두리가 있는 박스(카드) 생성
+        with st.container(border=True):
+            q_info = DELIVERY_QUESTS[q_name]
+            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
+            
+            if st.checkbox(label, key=f"chk_{q_name}"):
+                selected_quests.append(q_name)
+                
+            # 재료 목록을 둥근 태그(Badge) 디자인으로 생성
+            tags_html = ""
+            for k, v in q_info['materials'].items():
+                # 화면에 보여줄 때만 반복되는 '탈틴 농장 ' 글자를 지워서 깔끔하게 만듭니다.
+                short_name = k.replace("탈틴 농장 ", "")
+                tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
+            
+            # 체크박스 위치에 맞춰 들여쓰기(28px) 적용 후 출력
+            st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
+
+# 오른쪽 열 체크박스
+with col_q2:
+    for q_name in quest_names[half_idx:]:
+        # 테두리가 있는 박스(카드) 생성
+        with st.container(border=True):
+            q_info = DELIVERY_QUESTS[q_name]
+            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
+            
+            if st.checkbox(label, key=f"chk_{q_name}"):
+                selected_quests.append(q_name)
+                
+            # 재료 목록을 둥근 태그(Badge) 디자인으로 생성
+            tags_html = ""
+            for k, v in q_info['materials'].items():
+                short_name = k.replace("탈틴 농장 ", "")
+                tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
+            
+            # 체크박스 위치에 맞춰 들여쓰기(28px) 적용 후 출력
+            st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
+            
+
+if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary"):
+    if not selected_quests:
+        st.warning("선택된 퀘스트가 없습니다. 위에서 퀘스트를 하나 이상 체크해주세요!")
+    else:
+        # 체크된 퀘스트의 재료 합산 및 코인 계산 로직
+        aggregated_materials = {}
+        total_coins = 0
+        
+        for q_name in selected_quests:
+            q_data = DELIVERY_QUESTS[q_name]
+            limit = q_data['limit']
+            
+            # 획득 코인 합산 (1회당 코인 * 납품가능횟수)
+            total_coins += (q_data['coin'] * limit)
+            
+            # 재료 수량 합산
+            for mat_name, mat_count in q_data['materials'].items():
+                req_qty = mat_count * limit
+                if mat_name in aggregated_materials:
+                    aggregated_materials[mat_name] += req_qty
+                else:
+                    aggregated_materials[mat_name] = req_qty
+
+        # 합산된 재료들로 경매장 API 검색 진행
+        quest_total_price = 0
+        quest_result = []
+        
+        progress_bar = st.progress(0, text="경매장 시세 조회 중...")
+        
+        for idx, (item_name, count) in enumerate(aggregated_materials.items()):
+            price = get_price(item_name, FIXED_API_KEY)
+            subtotal = price * count
+            quest_total_price += subtotal
+            
+            quest_result.append({
+                "재료명": item_name,
+                "최저가": f"{price:,} G" if price > 0 else "매물 없음",
+                "필요 수량": f"{count}개",
+                "합계": f"{subtotal:,} G"
+            })
+            
+            time.sleep(0.3) # API 보호용 딜레이
+            progress_bar.progress((idx + 1) / len(aggregated_materials))
+            
+        progress_bar.empty()
+        
+        # 결과 출력 부분
+        st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
+        
+        # 여기서 숫자를 직접 넣지 않고 f"{quest_total_price:,} Gold" 처럼 글자로 감싸야 k가 나오지 않습니다.
+        st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
+        st.table(quest_result)
+
+
+
+
 st.caption("Data based on NEXON Open API")
+
 
 
 
