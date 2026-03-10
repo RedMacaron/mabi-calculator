@@ -347,7 +347,7 @@ st.markdown("""
 
 
 # ---------------------------------------------------------
-# 섹션 6: 탈틴 농장 시세 현황 및 1주 그래프
+# 섹션 5: 탈틴 농장 시세 현황 및 1주 그래프
 # ---------------------------------------------------------
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
@@ -501,120 +501,125 @@ if selected_items:
     st.plotly_chart(fig, use_container_width=True)
     
 # ---------------------------------------------------------
-# 섹션 7: 특화 채집 시즌 전용 시세 현황 및 그래프
+# 섹션 6: 탈틴 농장 시세 현황 및 그래프
+# ---------------------------------------------------------
+st.divider()
+st.header("📈 탈틴 농장 실시간 시세 및 그래프")
+
+if not df_history.empty:
+    latest_data = df_history.iloc[-1]
+    
+    st.write("### 💡 현재 최신 경매장 시세")
+    
+    # 1. 기본 생산품 파트 (3열 배치)
+    st.subheader("기본 생산품")
+    cols_basic = st.columns(3)
+    for idx, item in enumerate(CATEGORIES["기본 생산품"]):
+        with cols_basic[idx % 3]:
+            price = latest_data.get(item, 0)
+            display_item_with_local_image(item, price)
+            
+    st.divider()
+    
+    # 2. 가공품 파트 (2열 분할 후 각각 솥 배치)
+    st.subheader("가공품")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**풍요로운 마법의 솥**")
+        for item in CATEGORIES["풍요로운 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_local_image(item, price)
+        st.write("") 
+        st.markdown("**반짝이는 마법의 솥**")
+        for item in CATEGORIES["반짝이는 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_local_image(item, price)
+            
+    with col2:
+        st.markdown("**부드러운 마법의 솥**")
+        for item in CATEGORIES["부드러운 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_local_image(item, price)
+        st.write("") 
+        st.markdown("**섬세한 마법의 솥**")
+        for item in CATEGORIES["섬세한 마법의 솥"]:
+            price = latest_data.get(item, 0)
+            display_item_with_local_image(item, price)
+
+    st.divider()
+
+    # 3. 농장 아이템 전용 그래프 (Plotly)
+    st.write("### 📊 농장 작물 시세 변동 추이")
+    
+    # 특화 아이템을 제외한 일반 농장 아이템 리스트 생성
+    farm_items = [col for col in df_history.columns if col not in SPECIAL_ITEMS and col != "시간"]
+    
+    selected_farm = st.multiselect(
+        "그래프에서 확인할 아이템을 선택하세요", 
+        farm_items, 
+        default=farm_items[:2] if len(farm_items) >= 2 else farm_items,
+        key="farm_multiselect_unique" # 중복 방지 키
+    )
+
+    if selected_farm:
+        df_history.index = pd.to_datetime(df_history.index)
+        fig_farm = px.line(df_history[selected_farm], template="plotly_dark")
+        fig_farm.update_layout(
+            xaxis=dict(tickformat="%Y-%m-%d\n%H:%M", tickangle=0),
+            yaxis_title="가격(G)",
+            yaxis_tickformat=",",
+            legend_title_text="농장 아이템",
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_farm, use_container_width=True, key="farm_chart_id")
+
+
+# ---------------------------------------------------------
+# 섹션 7: 특화 채집 시즌 실시간 현황 및 그래프
 # ---------------------------------------------------------
 st.divider()
 st.header("💎 특화 채집 시즌 실시간 현황")
-
-# 특화 채집 아이템 리스트
-SPECIAL_ITEMS = [
-    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭", 
-    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기", 
-    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축핵", 
-    "월광 당근", "백연석", "마력 심재핵", "빛나는 양털"
-]
 
 if not df_history.empty:
     latest_data = df_history.iloc[-1]
     
     st.write("### 💰 특화 채집 최저가 요약")
     
-    # 아이템들을 4열 그리드로 배치
-    cols = st.columns(4)
+    # 특화 아이템 요약 카드 (4열 배치)
+    cols_spec = st.columns(4)
     for i, item_name in enumerate(SPECIAL_ITEMS):
         if item_name in latest_data:
             price = latest_data[item_name]
-            with cols[i % 4]:
-                # 기존에 정의된 display_item_with_local_image 함수 호출
-                # 이미지가 없다면 함수 내부 로직에 따라 기본 처리가 됩니다.
+            with cols_spec[i % 4]:
                 display_item_with_local_image(item_name, price)
 
     st.divider()
 
-    # 📊 특화 채집 그래프 부분
+    # 특화 채집 전용 그래프
     available_special = [item for item in SPECIAL_ITEMS if item in df_history.columns]
     
     if available_special:
         st.write("### 📈 특화 채집 시세 변동 추이")
         
         selected_special = st.multiselect(
-            "그래프에서 확인할 특화 아이템을 선택하세요", 
+            "확인할 특화 아이템을 선택하세요", 
             available_special, 
-            default=available_special[:3],
-            key="special_select_box"
+            default=available_special[:3] if len(available_special) >= 3 else available_special,
+            key="special_multiselect_unique" # 중복 방지 키
         )
         
         if selected_special:
-            # 시간 형식을 datetime으로 변환 (년-월-일 시:분 적용)
             df_history.index = pd.to_datetime(df_history.index)
-            
             fig_special = px.line(df_history[selected_special], template="plotly_dark")
-            
             fig_special.update_layout(
-                xaxis=dict(
-                    tickformat="%Y-%m-%d\n%H:%M",
-                    tickangle=0
-                ),
-                xaxis_title="",
+                xaxis=dict(tickformat="%Y-%m-%d\n%H:%M", tickangle=0),
                 yaxis_title="가격(G)",
                 yaxis_tickformat=",",
                 legend_title_text="특화 아이템",
                 hovermode="x unified"
             )
-            st.plotly_chart(fig_special, use_container_width=True)
-    else:
-        st.info("수집된 특화 채집 데이터가 없습니다. 수집기가 먼저 실행되어야 합니다.")
-
-
-# ---------------------------------------------------------
-# 섹션 8: 특화 채집 아이템 전용 그래프
-# ---------------------------------------------------------
-st.divider()
-st.header("💎 특화 채집 시즌 전용 시세 현황")
-
-# 특화 채집 아이템 리스트 정의
-SPECIAL_ITEMS = [
-    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭", 
-    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기", 
-    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축핵",
-    "월광 당근", "백연석", "마력 심재핵", "빛나는 양털"
-]
-
-if not df_history.empty:
-    # 시트 데이터 중 특화 채집 아이템만 필터링 (시트에 실제 존재하는 컬럼만 선별)
-    available_special = [item for item in SPECIAL_ITEMS if item in df_history.columns]
-    
-    if available_special:
-        st.write("### 📊 특화 채집 아이템 시세 변동")
-        
-        # 멀티셀렉트 기본값을 상위 3개로 설정
-        selected_special = st.multiselect(
-            "확인할 특화 아이템을 선택하세요", 
-            available_special, 
-            default=available_special[:3],
-            key="special_select"
-        )
-        
-        if selected_special:
-            # 인덱스를 datetime으로 변환하여 시간축 가독성 확보
-            df_history.index = pd.to_datetime(df_history.index)
-            
-            fig_special = px.line(df_history[selected_special], template="plotly_dark")
-            
-            fig_special.update_layout(
-                xaxis=dict(
-                    tickformat="%Y-%m-%d\n%H:%M", # 요청하신 년-월-일 시:분 형식 적용
-                    tickangle=0
-                ),
-                xaxis_title="",
-                yaxis_title="가격(G)",
-                yaxis_tickformat=",", # 천 단위 쉼표 표기
-                legend_title_text="특화 아이템",
-                hovermode="x unified"
-            )
-            st.plotly_chart(fig_special, use_container_width=True)
-    else:
-        st.info("구글 시트에 아직 특화 채집 데이터가 기록되지 않았습니다. 수집기를 먼저 실행해 주세요.")
+            st.plotly_chart(fig_special, use_container_width=True, key="special_chart_id")
 
 
 
