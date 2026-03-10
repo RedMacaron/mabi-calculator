@@ -349,34 +349,6 @@ st.markdown("""
 # ---------------------------------------------------------
 # 섹션 5: 탈틴 농장 시세 현황 및 1주 그래프
 # ---------------------------------------------------------
-st.divider()
-st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
-
-# 아이템 정보와 로컬 이미지를 나란히 렌더링해주는 헬퍼 함수
-def display_item_with_local_image(item_name, price):
-    # 이미지 폴더 경로 설정 
-    image_path = f"images/{item_name}.png"
-    
-    # 이미지가 폴더에 존재하는지 확인
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-            img_src = f"data:image/png;base64,{encoded_string}"
-    else:
-        # 이미지가 없을 경우 빈 네모난 기본 이미지 출력
-        img_src = "https://via.placeholder.com/30" 
-
-    html_code = f"""
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background-color: rgba(150, 150, 150, 0.1);">
-        <div style="display: flex; align-items: center;">
-            <img src="{img_src}" style="width: 28px; height: 28px; margin-right: 12px; background-color: transparent;">
-            <span style="font-size: 14px;">{item_name}</span>
-        </div>
-        <strong style="font-size: 15px;">{int(price):,} G</strong>
-    </div>
-    """
-    st.markdown(html_code, unsafe_allow_html=True)
-
 # 아이템 분류 데이터
 CATEGORIES = {
     "기본 생산품": [
@@ -405,6 +377,36 @@ CATEGORIES = {
         "탈틴 농장 황혼의 류트", "탈틴 농장 새벽의 활"
     ]
 }
+
+st.divider()
+st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
+
+# 아이템 정보와 로컬 이미지를 나란히 렌더링해주는 헬퍼 함수
+def display_item_with_local_image(item_name, price):
+    # 이미지 폴더 경로 설정 
+    image_path = f"images/{item_name}.png"
+    
+    # 이미지가 폴더에 존재하는지 확인
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+            img_src = f"data:image/png;base64,{encoded_string}"
+    else:
+        # 이미지가 없을 경우 빈 네모난 기본 이미지 출력
+        img_src = "https://via.placeholder.com/30" 
+
+    html_code = f"""
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background-color: rgba(150, 150, 150, 0.1);">
+        <div style="display: flex; align-items: center;">
+            <img src="{img_src}" style="width: 28px; height: 28px; margin-right: 12px; background-color: transparent;">
+            <span style="font-size: 14px;">{item_name}</span>
+        </div>
+        <strong style="font-size: 15px;">{int(price):,} G</strong>
+    </div>
+    """
+    st.markdown(html_code, unsafe_allow_html=True)
+
+
 
 # 구글 시트 데이터 로드 (함수는 기존과 동일)
 @st.cache_data(ttl=60)
@@ -578,6 +580,13 @@ if not df_history.empty:
 # ---------------------------------------------------------
 # 섹션 7: 특화 채집 시즌 실시간 현황 및 그래프
 # ---------------------------------------------------------
+SPECIAL_ITEMS = [
+    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭", 
+    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기", 
+    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축액", 
+    "월광 당근", "백연석", "마력 심재핵", "빛나는 양털"
+]
+
 st.divider()
 st.header("💎 특화 채집 시즌 실시간 현황")
 
@@ -775,6 +784,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
