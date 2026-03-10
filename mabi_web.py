@@ -652,11 +652,60 @@ if selected_items:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+# ---------------------------------------------------------
+# 섹션 7: 특화 채집 아이템 전용 그래프
+# ---------------------------------------------------------
+st.divider()
+st.header("💎 특화 채집 시즌 전용 시세 현황")
 
+# 특화 채집 아이템 리스트 정의
+SPECIAL_ITEMS = [
+    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭", 
+    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기", 
+    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축액", 
+    "월광 당근", "백연석", "마력 심재액", "빛나는 양털"
+]
+
+if not df_history.empty:
+    # 시트 데이터 중 특화 채집 아이템만 필터링 (시트에 실제 존재하는 컬럼만 선별)
+    available_special = [item for item in SPECIAL_ITEMS if item in df_history.columns]
+    
+    if available_special:
+        st.write("### 📊 특화 채집 아이템 시세 변동")
+        
+        # 멀티셀렉트 기본값을 상위 3개로 설정
+        selected_special = st.multiselect(
+            "확인할 특화 아이템을 선택하세요", 
+            available_special, 
+            default=available_special[:3],
+            key="special_select"
+        )
+        
+        if selected_special:
+            # 인덱스를 datetime으로 변환하여 시간축 가독성 확보
+            df_history.index = pd.to_datetime(df_history.index)
+            
+            fig_special = px.line(df_history[selected_special], template="plotly_dark")
+            
+            fig_special.update_layout(
+                xaxis=dict(
+                    tickformat="%Y-%m-%d\n%H:%M", # 요청하신 년-월-일 시:분 형식 적용
+                    tickangle=0
+                ),
+                xaxis_title="",
+                yaxis_title="가격(G)",
+                yaxis_tickformat=",", # 천 단위 쉼표 표기
+                legend_title_text="특화 아이템",
+                hovermode="x unified"
+            )
+            st.plotly_chart(fig_special, use_container_width=True)
+    else:
+        st.info("구글 시트에 아직 특화 채집 데이터가 기록되지 않았습니다. 수집기를 먼저 실행해 주세요.")
 
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
