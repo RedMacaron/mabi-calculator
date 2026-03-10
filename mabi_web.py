@@ -402,65 +402,15 @@ st.markdown("""
 """)
 
 
-# ---------------------------------------------------------
-# 섹션 5: 탈틴 농장 시세 현황 및 1주 그래프
-# ---------------------------------------------------------
+# =========================================================
+# 섹션 5: 탈틴 농장 실시간 시세 및 1주 그래프 (중복 통합됨)
+# =========================================================
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
-
-
-
-# 아이템 정보와 로컬 이미지를 나란히 렌더링해주는 헬퍼 함수
-def display_item_with_local_image(item_name, price):
-    # 이미지 폴더 경로 설정 
-    image_path = f"images/{item_name}.png"
-    
-    # 이미지가 폴더에 존재하는지 확인
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-            img_src = f"data:image/png;base64,{encoded_string}"
-    else:
-        # 이미지가 없을 경우 빈 네모난 기본 이미지 출력
-        img_src = "https://via.placeholder.com/30" 
-
-    html_code = f"""
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background-color: rgba(150, 150, 150, 0.1);">
-        <div style="display: flex; align-items: center;">
-            <img src="{img_src}" style="width: 28px; height: 28px; margin-right: 12px; background-color: transparent;">
-            <span style="font-size: 14px;">{item_name}</span>
-        </div>
-        <strong style="font-size: 15px;">{int(price):,} G</strong>
-    </div>
-    """
-    st.markdown(html_code, unsafe_allow_html=True)
-
-
-
-# 구글 시트 데이터 로드 (함수는 기존과 동일)
-@st.cache_data(ttl=60)
-def load_sheet_data():
-    try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds_dict = json.loads(st.secrets["google_credentials"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-        sheet = client.open("Mabi_DB").sheet1
-        
-        data = sheet.get_all_records()
-        df = pd.DataFrame(data)
-        if not df.empty:
-            df = df.set_index('시간')
-        return df
-    except Exception as e:
-        st.error(f"구글 시트 연동 오류: {e}")
-        return pd.DataFrame()
-
 df_history = load_sheet_data()
 
 if not df_history.empty:
     latest_data = df_history.iloc[-1]
-    
     st.write("### 💡 현재 최신 경매장 시세")
     
     # 1. 기본 생산품 파트 (3열 배치)
@@ -470,140 +420,58 @@ if not df_history.empty:
         with cols_basic[idx % 3]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
-            
+    
     st.divider()
     
     # 2. 가공품 파트 (2열 분할 후 각각 솥 배치)
     st.subheader("가공품")
-    col1, col2 = st.columns(2)
+    ca1, ca2 = st.columns(2)
     
-    with col1:
+    with ca1:
         st.markdown("**풍요로운 마법의 솥**")
         for item in CATEGORIES["풍요로운 마법의 솥"]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
             
-        st.write("") # 간격 띄우기
+        st.write("") 
+        
         st.markdown("**반짝이는 마법의 솥**")
         for item in CATEGORIES["반짝이는 마법의 솥"]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
             
-    with col2:
+    with ca2:
         st.markdown("**부드러운 마법의 솥**")
         for item in CATEGORIES["부드러운 마법의 솥"]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
             
-        st.write("") # 간격 띄우기
+        st.write("") 
+        
         st.markdown("**섬세한 마법의 솥**")
         for item in CATEGORIES["섬세한 마법의 솥"]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
 
     st.divider()
-
-# 3. 시간대별 시세 변동 그래프 (Plotly 적용)
-
-st.write("### 📊 최근 시세 변동 추이")
-
-item_list = df_history.columns.tolist()
-selected_items = st.multiselect("그래프에서 확인할 아이템을 선택하세요", item_list, default=item_list[:2])
-
-if selected_items:
-    # 시간 문자열을 datetime 객체로 변환
-    df_history.index = pd.to_datetime(df_history.index)
     
-    # 그래프 생성 (다크 템플릿 적용)
-    fig = px.line(df_history[selected_items], template="plotly_dark")
-    
-    fig.update_layout(
-        xaxis=dict(
-            # 년-월-일 시:분 형식으로 변경 (%Y:년, %m:월, %d:일, %H:시, %M:분)
-            tickformat="%Y-%m-%d\n%H:%M", 
-            tickangle=0 
-        ),
-        xaxis_title="",
-        yaxis_title="가격(G)",
-        yaxis_tickformat=",", # y축 쉼표 표기 및 k 제거
-        legend_title_text="선택된 아이템",
-        hovermode="x unified"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-# ---------------------------------------------------------
-# 섹션 6: 탈틴 농장 시세 현황 및 그래프
-# ---------------------------------------------------------
-st.divider()
-st.header("📈 탈틴 농장 실시간 시세 및 그래프")
-
-if not df_history.empty:
-    latest_data = df_history.iloc[-1]
-    
-    st.write("### 💡 현재 최신 경매장 시세")
-    
-    # 1. 기본 생산품 파트 (3열 배치)
-    st.subheader("기본 생산품")
-    cols_basic = st.columns(3)
-    for idx, item in enumerate(CATEGORIES["기본 생산품"]):
-        with cols_basic[idx % 3]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-            
-    st.divider()
-    
-    # 2. 가공품 파트 (2열 분할 후 각각 솥 배치)
-    st.subheader("가공품")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("**풍요로운 마법의 솥**")
-        for item in CATEGORIES["풍요로운 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-        st.write("") 
-        st.markdown("**반짝이는 마법의 솥**")
-        for item in CATEGORIES["반짝이는 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-            
-    with col2:
-        st.markdown("**부드러운 마법의 솥**")
-        for item in CATEGORIES["부드러운 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-        st.write("") 
-        st.markdown("**섬세한 마법의 솥**")
-        for item in CATEGORIES["섬세한 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-
-    st.divider()
-
-    # 3. 농장 아이템 전용 그래프 (Plotly)
+    # 3. 농장 아이템 전용 그래프
     st.write("### 📊 농장 작물 시세 변동 추이")
     
-    # 특화 아이템을 제외한 일반 농장 아이템 리스트 생성
     farm_items = [col for col in df_history.columns if col not in SPECIAL_ITEMS and col != "시간"]
+    selected_farm = st.multiselect("그래프에서 확인할 농장 아이템을 선택하세요", farm_items, default=farm_items[:2], key="ms_farm")
     
-    selected_farm = st.multiselect(
-        "그래프에서 확인할 아이템을 선택하세요", 
-        farm_items, 
-        default=farm_items[:2] if len(farm_items) >= 2 else farm_items,
-        key="farm_multiselect_unique" # 중복 방지 키
-    )
-
     if selected_farm:
         df_history.index = pd.to_datetime(df_history.index)
-        fig_farm = px.line(df_history[selected_farm], template="plotly_dark")
-        fig_farm.update_layout(
-            xaxis=dict(tickformat="%Y-%m-%d\n%H:%M", tickangle=0),
+        fig_f = px.line(df_history[selected_farm], template="plotly_dark")
+        fig_f.update_layout(
+            xaxis=dict(tickformat="%Y-%m-%d\n%H:%M", tickangle=0), 
             yaxis_title="가격(G)",
-            yaxis_tickformat=",",
+            yaxis_tickformat=",", 
             legend_title_text="농장 아이템",
             hovermode="x unified"
         )
-        st.plotly_chart(fig_farm, use_container_width=True, key="farm_chart_id")
+        st.plotly_chart(fig_f, use_container_width=True, key="chart_farm")
 
 
 # ---------------------------------------------------------
@@ -785,6 +653,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
