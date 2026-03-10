@@ -651,9 +651,75 @@ if selected_items:
         hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
+    
+# ---------------------------------------------------------
+# 섹션 7: 특화 채집 시즌 전용 시세 현황 및 그래프
+# ---------------------------------------------------------
+st.divider()
+st.header("💎 특화 채집 시즌 실시간 현황")
+
+# 특화 채집 아이템 리스트
+SPECIAL_ITEMS = [
+    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭", 
+    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기", 
+    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축핵", 
+    "월광 당근", "백연석", "마력 심재핵", "빛나는 양털"
+]
+
+if not df_history.empty:
+    latest_data = df_history.iloc[-1]
+    
+    st.write("### 💰 특화 채집 최저가 요약")
+    
+    # 아이템들을 4열 그리드로 배치
+    cols = st.columns(4)
+    for i, item_name in enumerate(SPECIAL_ITEMS):
+        if item_name in latest_data:
+            price = latest_data[item_name]
+            with cols[i % 4]:
+                # 기존에 정의된 display_item_with_local_image 함수 호출
+                # 이미지가 없다면 함수 내부 로직에 따라 기본 처리가 됩니다.
+                display_item_with_local_image(item_name, price)
+
+    st.divider()
+
+    # 📊 특화 채집 그래프 부분
+    available_special = [item for item in SPECIAL_ITEMS if item in df_history.columns]
+    
+    if available_special:
+        st.write("### 📈 특화 채집 시세 변동 추이")
+        
+        selected_special = st.multiselect(
+            "그래프에서 확인할 특화 아이템을 선택하세요", 
+            available_special, 
+            default=available_special[:3],
+            key="special_select_box"
+        )
+        
+        if selected_special:
+            # 시간 형식을 datetime으로 변환 (년-월-일 시:분 적용)
+            df_history.index = pd.to_datetime(df_history.index)
+            
+            fig_special = px.line(df_history[selected_special], template="plotly_dark")
+            
+            fig_special.update_layout(
+                xaxis=dict(
+                    tickformat="%Y-%m-%d\n%H:%M",
+                    tickangle=0
+                ),
+                xaxis_title="",
+                yaxis_title="가격(G)",
+                yaxis_tickformat=",",
+                legend_title_text="특화 아이템",
+                hovermode="x unified"
+            )
+            st.plotly_chart(fig_special, use_container_width=True)
+    else:
+        st.info("수집된 특화 채집 데이터가 없습니다. 수집기가 먼저 실행되어야 합니다.")
+
 
 # ---------------------------------------------------------
-# 섹션 7: 특화 채집 아이템 전용 그래프
+# 섹션 8: 특화 채집 아이템 전용 그래프
 # ---------------------------------------------------------
 st.divider()
 st.header("💎 특화 채집 시즌 전용 시세 현황")
@@ -705,6 +771,7 @@ if not df_history.empty:
 
 
 st.caption("Data based on NEXON Open API")
+
 
 
 
