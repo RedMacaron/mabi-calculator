@@ -607,7 +607,7 @@ if not df_history.empty:
 
 
 # ---------------------------------------------------------
-# 섹션 7: 특화 채집 시즌 실시간 현황 및 그래프
+# 섹션 6: 특화 채집 시즌 실시간 현황 및 그래프
 # ---------------------------------------------------------
 st.divider()
 st.header("💎 특화 채집 시즌 실시간 현황")
@@ -654,10 +654,8 @@ if not df_history.empty:
             )
             st.plotly_chart(fig_special, use_container_width=True, key="special_chart_id")
 
-
-
 # ---------------------------------------------------------
-# 섹션 5: 납품 퀘스트 계산기
+# 섹션 7: 납품 퀘스트 계산기
 # ---------------------------------------------------------
 st.divider()
 st.header("📦 생활 협회 납품 퀘스트 계산기")
@@ -786,9 +784,8 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
         st.table(quest_result)
 
 
-
-
 st.caption("Data based on NEXON Open API")
+
 
 
 
