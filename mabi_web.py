@@ -289,7 +289,7 @@ st.markdown("""
 tab2, tab1 = st.tabs(["📚 기존 표준 루트", "🛠️ 6티어 탈농만 루트"])
 
 # ----------------- 탭 1: 기존 표준 루트 -----------------
-with tab1:
+with tab2:
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -363,7 +363,7 @@ with tab1:
         - 루멘 시럽: **2개** """)
 
 # ----------------- 탭 2: 신규 커스텀 루트 -----------------
-with tab2:
+with tab1:
     col1_c, col2_c, col3_c = st.columns(3)
 
     with col1_c:
