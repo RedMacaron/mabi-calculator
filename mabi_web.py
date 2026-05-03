@@ -558,7 +558,8 @@ with col_q1:
     for q_name in quest_names[:half_idx]:
         with st.container(border=True):
             q_info = DELIVERY_QUESTS[q_name]
-            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
+            # 코인 정보 제거 및 라벨 수정
+            label = f"{q_name} (납품 {q_info['limit']}회)"
             if st.checkbox(label, key=f"chk_{q_name}"): selected_quests.append(q_name)
             tags_html = ""
             for k, v in q_info['materials'].items():
@@ -570,7 +571,8 @@ with col_q2:
     for q_name in quest_names[half_idx:]:
         with st.container(border=True):
             q_info = DELIVERY_QUESTS[q_name]
-            label = f"{q_name} (납품 {q_info['limit']}회 / 코인 {q_info['coin']})"
+            # 코인 정보 제거 및 라벨 수정
+            label = f"{q_name} (납품 {q_info['limit']}회)"
             if st.checkbox(label, key=f"chk_{q_name}"): selected_quests.append(q_name)
             tags_html = ""
             for k, v in q_info['materials'].items():
@@ -578,19 +580,25 @@ with col_q2:
                 tags_html += f"<span style='display:inline-block; background-color:rgba(150,150,150,0.1); padding:4px 10px; border-radius:12px; font-size:12px; margin-right:6px; margin-top:4px; border: 1px solid rgba(150,150,150,0.2); color:gray;'>{short_name} <b>{v}</b>개</span>"
             st.markdown(f"<div style='margin-left: 28px; margin-bottom: 4px;'>{tags_html}</div>", unsafe_allow_html=True)
 
+st.divider()
+
+# 계산 전 배수를 입력받는 숫자 입력칸 추가
+multiplier = st.number_input("계산할 배수 (예: 3캐릭 진행 시 3 입력)", min_value=1, value=1, step=1)
+
 if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary", key="btn_quest_calc"):
     if not selected_quests: st.warning("선택된 퀘스트가 없습니다. 위에서 퀘스트를 하나 이상 체크해주세요!")
     else:
         aggregated_materials = {}
-        total_coins = 0
+        # 코인 합산 로직 제거
         for q_name in selected_quests:
             q_data = DELIVERY_QUESTS[q_name]
             limit = q_data['limit']
-            total_coins += (q_data['coin'] * limit)
             for mat_name, mat_count in q_data['materials'].items():
-                req_qty = mat_count * limit
+                # 추가 입력받은 배수(multiplier)를 총 수량에 곱해줌
+                req_qty = mat_count * limit * multiplier
                 if mat_name in aggregated_materials: aggregated_materials[mat_name] += req_qty
                 else: aggregated_materials[mat_name] = req_qty
+                
         quest_total_price = 0
         quest_result = []
         progress_bar = st.progress(0, text="경매장 시세 조회 중...")
@@ -602,7 +610,8 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
             time.sleep(0.3) 
             progress_bar.progress((idx + 1) / len(aggregated_materials))
         progress_bar.empty()
-        st.success(f"💰 총 획득 예상 생활 협회 코인: **{total_coins:,}개**")
+        
+        # 코인 출력 부분 제거됨
         st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
         st.table(quest_result)
 
