@@ -583,7 +583,7 @@ with col_q2:
 st.divider()
 
 # 계산 전 배수를 입력받는 숫자 입력칸 추가
-multiplier = st.number_input("계산할 배수 (예: 3캐릭 진행 시 3 입력)", min_value=1, value=1, step=1)
+multiplier = st.number_input("계산할 배수 (예: 3배 구매 진행 시 3 입력)", min_value=1, value=1, step=1)
 
 if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary", key="btn_quest_calc"):
     if not selected_quests: st.warning("선택된 퀘스트가 없습니다. 위에서 퀘스트를 하나 이상 체크해주세요!")
