@@ -299,7 +299,7 @@ styled = (
     df_roi.style
     .format({c: lambda v: f"{v:,.0f} G" for c in ["1회 재료비", "총 재료비", "총 보상 기대값"]})
     .format({"손익": lambda v: f"{v:+,.0f} G"})
-    .applymap(color_profit, subset=["손익"])
+    .map(color_profit, subset=["손익"])
     .set_properties(**{"text-align": "right"}, subset=["1회 재료비", "총 재료비", "총 보상 기대값", "손익"])
     .set_properties(**{"text-align": "center"}, subset=["납품 횟수"])
 )
