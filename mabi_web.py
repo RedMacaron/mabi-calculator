@@ -125,43 +125,49 @@ st.title("💰 마비노기 물교 & 경매장 계산기")
 # 헬퍼 함수
 # =========================================================
 @st.cache_data(ttl=60)
-def get_all_quest_prices(key):
-    """납품 퀘스트 전체 재료 시세를 한 번에 조회 (1분 캐시)"""
-    all_materials = set()
+def fetch_all_prices(key):
+    # 납품 재료 + 탈농 아이템 전체를 한 번에 조회 (10분 캐시)
+    item_set = set()
     for q_data in DELIVERY_QUESTS.values():
-        all_materials.update(q_data['materials'].keys())
+        item_set.update(q_data['materials'].keys())
+    for cat_items in CATEGORIES.values():
+        item_set.update(cat_items)
 
     price_map = {}
-    for mat in all_materials:
-        url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(mat)}"
-        headers = {"x-nxopen-api-key": key, "accept": "application/json"}
+    for item in item_set:
+        url = f'https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item)}'
+        headers = {'x-nxopen-api-key': key, 'accept': 'application/json'}
         try:
-            res = requests.get(url, headers=headers)
+            res = requests.get(url, headers=headers, timeout=5)
+            if res.status_code == 429:
+                time.sleep(3)
+                res = requests.get(url, headers=headers, timeout=5)
             if res.status_code == 200:
-                items = res.json().get('auction_item', [])
-                if items:
-                    items.sort(key=lambda x: x['auction_price_per_unit'])
-                    price_map[mat] = items[0]['auction_price_per_unit']
+                items_data = res.json().get('auction_item', [])
+                if items_data:
+                    items_data.sort(key=lambda x: x['auction_price_per_unit'])
+                    price_map[item] = items_data[0]['auction_price_per_unit']
                 else:
-                    price_map[mat] = 0
+                    price_map[item] = 0
         except:
-            price_map[mat] = 0
-        time.sleep(0.3)
+            price_map[item] = 0
+        time.sleep(0.05)
     return price_map
 
+# 장바구니 단건 조회용
 @st.cache_data(ttl=60)
 def get_price(item_name, key):
-    url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item_name)}"
-    headers = {"x-nxopen-api-key": key, "accept": "application/json"}
+    url = f'https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item_name)}'
+    headers = {'x-nxopen-api-key': key, 'accept': 'application/json'}
     try:
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=headers, timeout=5)
         if res.status_code == 200:
-            data = res.json()
-            items = data.get('auction_item', [])
+            items = res.json().get('auction_item', [])
             if items:
                 items.sort(key=lambda x: x['auction_price_per_unit'])
                 return items[0]['auction_price_per_unit']
-    except: pass
+    except:
+        pass
     return 0
 
 def display_item_with_local_image(item_name, price):
@@ -183,30 +189,6 @@ def display_item_with_local_image(item_name, price):
     </div>
     """
     st.markdown(html_code, unsafe_allow_html=True)
-
-@st.cache_data(ttl=60)
-def get_farm_prices(key):
-    """탈틴 농장 전체 아이템 시세 일괄 조회 """
-    all_items = []
-    for items in CATEGORIES.values():
-        all_items.extend(items)
-    price_map = {}
-    for item in all_items:
-        url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item)}"
-        headers = {"x-nxopen-api-key": key, "accept": "application/json"}
-        try:
-            res = requests.get(url, headers=headers)
-            if res.status_code == 200:
-                items_data = res.json().get('auction_item', [])
-                if items_data:
-                    items_data.sort(key=lambda x: x['auction_price_per_unit'])
-                    price_map[item] = items_data[0]['auction_price_per_unit']
-                else:
-                    price_map[item] = 0
-        except:
-            price_map[item] = 0
-        time.sleep(0.3)
-    return price_map
 
 # =========================================================
 # ★ 섹션 0: 납품 손익 분석 (최상단)
@@ -252,9 +234,9 @@ with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     | 탈틴 협회 열쇠 | 25,000 G |
     """)
 
-# 시세 자동 조회 (1분 캐시)
-with st.spinner("납품 재료 경매장 시세 조회 중... (약 20초, 이후 1분간 캐시)"):
-    price_map = get_all_quest_prices(FIXED_API_KEY)
+# 시세 자동 조회 (5분 캐시)
+with st.spinner("납품 재료 경매장 시세 조회 중... (최초 1회, 이후 10분간 캐시)"):
+    price_map = fetch_all_prices(FIXED_API_KEY)
 fetched_at = datetime.now().strftime('%H:%M:%S')
 
 # 갱신 버튼 + 조회 시각
@@ -264,7 +246,7 @@ with col_refresh:
         st.cache_data.clear()
         st.rerun()
 with col_cap:
-    st.caption(f"경매장 최저가 기준 | 조회: {fetched_at} | 5분마다 자동 갱신")
+    st.caption(f"경매장 최저가 기준 | 조회: {fetched_at} | 10분마다 자동 갱신")
 
 st.divider()
 
@@ -404,7 +386,7 @@ if st.button("6티어 재료 견적 확인하기 🚀", type="primary"):
             "수량": f"{count}개",
             "합계": f"{subtotal:,} G"
         })
-        time.sleep(0.3)
+        time.sleep(0.05)
         my_bar.progress((idx + 1) / len(SHOPPING_LIST))
 
     my_bar.empty()
@@ -465,7 +447,7 @@ if st.session_state.cart:
                 "수량": f"{item['count']}개",
                 "합계": f"{sub:,} G"
             })
-            time.sleep(0.3)
+            time.sleep(0.05)
             bar2.progress((idx + 1) / len(st.session_state.cart))
         bar2.empty()
         st.metric("장바구니 총액", f"{total_cart:,} Gold")
@@ -646,8 +628,8 @@ st.markdown("""
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세")
 
-with st.spinner("탈틴 농장 아이템 시세 조회 중... (1분간 캐시)"):
-    farm_price_map = get_farm_prices(FIXED_API_KEY)
+with st.spinner("탈틴 농장 시세 불러오는 중... (캐시 유효 시 즉시)"):
+    farm_price_map = fetch_all_prices(FIXED_API_KEY)
 farm_fetched_at = datetime.now().strftime('%H:%M:%S')
 
 col_farm_refresh, col_farm_cap = st.columns([1, 6])
@@ -656,7 +638,7 @@ with col_farm_refresh:
         st.cache_data.clear()
         st.rerun()
 with col_farm_cap:
-    st.caption(f"경매장 최저가 기준 | 조회: {farm_fetched_at} | 5분마다 자동 갱신")
+    st.caption(f"경매장 최저가 기준 | 조회: {farm_fetched_at} | 10분마다 자동 갱신")
 
 st.subheader("기본 생산품")
 cols_basic = st.columns(3)
@@ -756,7 +738,7 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
             subtotal = price * count
             quest_total_price += subtotal
             quest_result.append({"재료명": item_name, "최저가": f"{price:,} G" if price > 0 else "매물 없음", "필요 수량": f"{count}개", "합계": f"{subtotal:,} G"})
-            time.sleep(0.3)
+            time.sleep(0.05)
             progress_bar.progress((idx + 1) / len(aggregated_materials))
         progress_bar.empty()
 
