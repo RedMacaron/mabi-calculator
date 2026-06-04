@@ -14,11 +14,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 # =========================================================
 # 설정 및 변수 선언
 # =========================================================
-# 금고(Secrets)에서 꺼내옴
 FIXED_API_KEY = st.secrets["my_api_key"]
 
-# [설정 2] 이번 주 물교 6티어 재료 (여기서 직접 수정하면 반영됩니다)
-# 형식 -> "아이템이름": 개수,
 SHOPPING_LIST = {
     "탈틴 농장 블랙베리 주스": 3,
     "탈틴 농장 퓨어 블러썸 머리핀": 3,
@@ -31,15 +28,13 @@ SHOPPING_LIST = {
     "루멘 시럽": 2
 }
 
-# 특화 채집 아이템 리스트 (NameError 방지를 위해 상단 배치)
 SPECIAL_ITEMS = [
-    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭", 
-    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기", 
-    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축액", 
+    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭",
+    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기",
+    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축액",
     "월광 당근", "백연석", "마력 심재핵", "빛나는 양털"
 ]
 
-# 아이템 분류 데이터
 CATEGORIES = {
     "기본 생산품": [
         "탈틴 농장 일반 블랙베리", "탈틴 농장 고급 블랙베리", "탈틴 농장 최고급 블랙베리",
@@ -51,24 +46,23 @@ CATEGORIES = {
         "탈틴 농장 일반 석영", "탈틴 농장 고급 석영", "탈틴 농장 최고급 석영"
     ],
     "풍요로운 마법의 솥": [
-        "탈틴 농장 블랙베리 주스", "탈틴 농장 달콤 케이크", "탈틴 농장 붉은 배 잼", 
+        "탈틴 농장 블랙베리 주스", "탈틴 농장 달콤 케이크", "탈틴 농장 붉은 배 잼",
         "탈틴 농장 별무늬 샐러드", "탈틴 농장 재스민 향수"
     ],
     "부드러운 마법의 솥": [
-        "탈틴 농장 자색 원단", "탈틴 농장 꽃무늬 원피스", "탈틴 농장 방수 원단", 
+        "탈틴 농장 자색 원단", "탈틴 농장 꽃무늬 원피스", "탈틴 농장 방수 원단",
         "탈틴 농장 강화 섬유", "탈틴 농장 이브닝 드레스"
     ],
     "반짝이는 마법의 솥": [
-        "탈틴 농장 레드문 귀걸이", "탈틴 농장 퓨어 블러썸 머리핀", "탈틴 농장 석영 파우더", 
+        "탈틴 농장 레드문 귀걸이", "탈틴 농장 퓨어 블러썸 머리핀", "탈틴 농장 석영 파우더",
         "탈틴 농장 미드나잇 펄 페인트", "탈틴 농장 장식용 크리스탈 검"
     ],
     "섬세한 마법의 솥": [
-        "탈틴 농장 강력 접착제", "탈틴 농장 천연 고무", "탈틴 농장 누름꽃 공예 함", 
+        "탈틴 농장 강력 접착제", "탈틴 농장 천연 고무", "탈틴 농장 누름꽃 공예 함",
         "탈틴 농장 황혼의 류트", "탈틴 농장 새벽의 활"
     ]
 }
 
-# 납품 퀘스트 데이터
 DELIVERY_QUESTS = {
     "두갈드 아일 목수의 주문": {"limit": 7, "coin": 330, "materials": {"탈틴 농장 일반 블랙베리": 1, "탈틴 농장 자색 원단": 2, "탈틴 농장 붉은 배 잼": 2}},
     "슬리아브 퀼린 광부의 주문": {"limit": 7, "coin": 240, "materials": {"탈틴 농장 일반 오크라": 1, "탈틴 농장 강력 접착제": 2, "탈틴 농장 방수 원단": 2}},
@@ -90,6 +84,20 @@ DELIVERY_QUESTS = {
 }
 
 # =========================================================
+# 납품 보상 아이템 상점 판매가 (골드 기준, 확정값)
+# 나중에 퀘스트별 보상 풀이 다를 때 여기서 수정하세요
+# =========================================================
+REWARD_ITEMS = {
+    "탈틴 농장 업그레이드 벽돌": 10000,
+    "탈틴 농장 업그레이드 철판": 20000,
+    "탈틴 농장 업그레이드 도료": 30000,
+    "탈틴 농장 업그레이드 유리": 40000,
+    "탈틴 협회 열쇠": 25000,
+}
+# 보상 기대값 = 전체 보상 아이템 평균 (동일 확률 가정)
+REWARD_EXPECTED_VALUE = sum(REWARD_ITEMS.values()) / len(REWARD_ITEMS)  # 25,000 G
+
+# =========================================================
 # 페이지 설정 및 CSS
 # =========================================================
 st.set_page_config(page_title="마비노기 물교&경매장 계산기", layout="wide")
@@ -97,26 +105,26 @@ st.set_page_config(page_title="마비노기 물교&경매장 계산기", layout=
 st.markdown(
     """
     <style>
-    /* 1. 전체 앱 배경 */
     .stApp { background-color: #1a1c24; }
-    /* 2. 모든 일반 텍스트 선명화 */
     .stApp p, .stApp span, .stApp label, .stApp li { color: #ffffff !important; font-weight: 500; }
-    /* 3. 흰색 박스(JSON 뷰어) 문제 해결 */
     div[data-testid="stJson"], div[data-testid="stJson"] pre { background-color: #262730 !important; color: #ffffff !important; border-radius: 5px; }
-    /* 4. 표(Table) 가독성 수정 */
     .stTable { background-color: #262730 !important; }
     .stTable th { background-color: #31333f !important; color: #ffffff !important; font-weight: bold; }
     .stTable td { color: #e0e0e0 !important; border-bottom: 1px solid #3f404d !important; }
-    /* 5. 익스펜더(접이식 메뉴) 내부 흰색 배경 제거 */
     div[data-testid="stExpander"] { background-color: #2d303d !important; border: 1px solid #4a4d5e !important; border-radius: 8px; }
     div[data-testid="stExpander"] .streamlit-expanderHeader { color: #ffffff !important; background-color: transparent !important; }
     div[data-testid="stExpander"] .streamlit-expanderContent { background-color: #262730 !important; color: #ffffff !important; }
-    /* 6. 입력창 및 버튼 텍스트 색상 */
     input { color: #ffffff !important; background-color: #3f404d !important; }
-    /* 7. 메트릭(숫자 강조) 색상 */
     div[data-testid="stMetricValue"] { color: #00ffc8 !important; }
-    /* 8. 생활 협회 리스트 카드 디자인 */
     div[data-testid="stVerticalBlockBorderWrapper"] { background-color: #2d303d !important; border: 1px solid #4a4d5e !important; }
+    /* 손익 표 강조 스타일 */
+    .profit-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .profit-table th { background-color: #31333f; color: #ffffff; padding: 8px 12px; text-align: left; border-bottom: 2px solid #4a4d5e; }
+    .profit-table td { padding: 7px 12px; border-bottom: 1px solid #3a3d4d; color: #e0e0e0; }
+    .profit-table tr:hover td { background-color: #2d303d; }
+    .badge-profit { background-color: #1a4a3a; color: #00ffc8; padding: 3px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; }
+    .badge-loss { background-color: #4a1a1a; color: #ff6b6b; padding: 3px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; }
+    .badge-neutral { background-color: #3a3a1a; color: #ffd166; padding: 3px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -149,7 +157,7 @@ def display_item_with_local_image(item_name, price):
             encoded_string = base64.b64encode(image_file.read()).decode()
             img_src = f"data:image/png;base64,{encoded_string}"
     else:
-        img_src = "https://via.placeholder.com/30" 
+        img_src = "https://via.placeholder.com/30"
 
     html_code = f"""
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background-color: rgba(150, 150, 150, 0.1);">
@@ -180,6 +188,129 @@ def load_sheet_data():
         return pd.DataFrame()
 
 # =========================================================
+# ★ 섹션 0: 납품 손익 분석 (최상단)
+# =========================================================
+st.header("🏆 납품 퀘스트 손익 분석 (시즌 말 탈농 가격 하락 대비)")
+
+with st.expander("ℹ️ 계산 방식 안내", expanded=False):
+    st.markdown(f"""
+    - **재료비**: 각 퀘스트 납품 1회에 필요한 재료를 경매장 최저가로 구매 시 총 비용 (limit 횟수 × 재료비 합산)
+    - **보상 기대값**: 납품 1회당 보상 아이템 1개를 랜덤으로 받는다고 가정, 아래 5종 동일 확률 적용
+    - **손익** = 총 보상 기대값 − 총 재료비 (양수면 이득 🟢, 음수면 손해 🔴)
+    
+    | 보상 아이템 | 상점 판매가 |
+    |---|---|
+    | 탈틴 농장 업그레이드 벽돌 | 10,000 G |
+    | 탈틴 농장 업그레이드 철판 | 20,000 G |
+    | 탈틴 농장 업그레이드 도료 | 30,000 G |
+    | 탈틴 농장 업그레이드 유리 | 40,000 G |
+    | 탈틴 협회 열쇠 | 25,000 G |
+    
+    > **보상 기대값 (1회 평균)**: {REWARD_EXPECTED_VALUE:,.0f} G
+    
+    ⚠️ *보상 확률이 동일하지 않을 수 있으며, 퀘스트별 보상 풀이 다를 수 있습니다. 데이터 연구 후 수정 예정.*
+    """)
+
+if st.button("📊 손익 분석 시작 (경매장 시세 조회)", type="primary", key="btn_roi_calc"):
+    # 필요한 모든 재료 목록 수집 (중복 제거)
+    all_materials = set()
+    for q_data in DELIVERY_QUESTS.values():
+        all_materials.update(q_data['materials'].keys())
+    all_materials = list(all_materials)
+
+    # 경매장 시세 일괄 조회
+    price_map = {}
+    prog = st.progress(0, text="경매장 시세 조회 중...")
+    for idx, mat in enumerate(all_materials):
+        price_map[mat] = get_price(mat, FIXED_API_KEY)
+        time.sleep(0.3)
+        prog.progress((idx + 1) / len(all_materials))
+    prog.empty()
+
+    # 퀘스트별 손익 계산
+    rows = []
+    for q_name, q_data in DELIVERY_QUESTS.items():
+        limit = q_data['limit']
+        # 1회 재료비 계산
+        cost_per_run = sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items())
+        total_cost = cost_per_run * limit
+        total_reward = REWARD_EXPECTED_VALUE * limit
+        profit = total_reward - total_cost
+
+        # 매물 없는 재료 체크
+        missing = [m for m in q_data['materials'] if price_map.get(m, 0) == 0]
+
+        rows.append({
+            "q_name": q_name,
+            "limit": limit,
+            "cost_per_run": cost_per_run,
+            "total_cost": total_cost,
+            "total_reward": total_reward,
+            "profit": profit,
+            "missing": missing,
+        })
+
+    # 손익 기준 내림차순 정렬
+    rows.sort(key=lambda x: x["profit"], reverse=True)
+
+    # 요약 메트릭
+    profitable = sum(1 for r in rows if r["profit"] > 0)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("이득 퀘스트", f"{profitable}개")
+    m2.metric("손해 퀘스트", f"{len(rows) - profitable}개")
+    m3.metric("보상 1회 기대값", f"{REWARD_EXPECTED_VALUE:,.0f} G")
+
+    # 손익 표 렌더링
+    table_rows_html = ""
+    for r in rows:
+        profit_val = r["profit"]
+        profit_str = f"{profit_val:+,.0f} G"
+        if profit_val > 0:
+            badge = f'<span class="badge-profit">🟢 {profit_str}</span>'
+        elif profit_val < 0:
+            badge = f'<span class="badge-loss">🔴 {profit_str}</span>'
+        else:
+            badge = f'<span class="badge-neutral">⚪ {profit_str}</span>'
+
+        missing_note = ""
+        if r["missing"]:
+            short = [m.replace("탈틴 농장 ", "") for m in r["missing"]]
+            missing_note = f'<br><span style="color:#ff9999; font-size:11px;">⚠️ 매물없음: {", ".join(short)}</span>'
+
+        table_rows_html += f"""
+        <tr>
+            <td>{r['q_name']}</td>
+            <td style="text-align:center;">{r['limit']}회</td>
+            <td style="text-align:right;">{r['cost_per_run']:,.0f} G</td>
+            <td style="text-align:right;">{r['total_cost']:,.0f} G{missing_note}</td>
+            <td style="text-align:right;">{r['total_reward']:,.0f} G</td>
+            <td style="text-align:center;">{badge}</td>
+        </tr>
+        """
+
+    st.markdown(f"""
+    <table class="profit-table">
+      <thead>
+        <tr>
+          <th>퀘스트명</th>
+          <th style="text-align:center;">납품 횟수</th>
+          <th style="text-align:right;">1회 재료비</th>
+          <th style="text-align:right;">총 재료비</th>
+          <th style="text-align:right;">총 보상 기대값</th>
+          <th style="text-align:center;">손익</th>
+        </tr>
+      </thead>
+      <tbody>
+        {table_rows_html}
+      </tbody>
+    </table>
+    """, unsafe_allow_html=True)
+
+    st.caption(f"※ 재료비는 경매장 최저가 기준 | 보상 기대값 = {REWARD_EXPECTED_VALUE:,.0f} G × 납품 횟수 | 조회 시각: {datetime.now().strftime('%H:%M:%S')}")
+
+st.divider()
+
+# =========================================================
 # 섹션 1: 고정 목록 (물교 재료)
 # =========================================================
 st.header("📅 이번 주 물교 6티어 재료")
@@ -201,7 +332,6 @@ if st.button("6티어 재료 견적 확인하기 🚀", type="primary"):
         price = get_price(name, FIXED_API_KEY)
         subtotal = price * count
         total_price += subtotal
-        
         result_data.append({
             "아이템": name,
             "최저가": f"{price:,} G" if price > 0 else "매물없음",
@@ -210,13 +340,13 @@ if st.button("6티어 재료 견적 확인하기 🚀", type="primary"):
         })
         time.sleep(0.3)
         my_bar.progress((idx + 1) / len(SHOPPING_LIST))
-    
+
     my_bar.empty()
-    
+
     col1, col2 = st.columns(2)
     with col1: st.metric("총 필요 골드", f"{total_price:,} Gold")
     with col2: st.metric("1/N (절반)", f"{int(total_price/2):,} Gold")
-    
+
     st.table(result_data)
 
 st.divider()
@@ -235,7 +365,7 @@ with st.form("add_item_form", clear_on_submit=True):
     with c1: input_name = st.text_input("아이템 이름")
     with c2: input_count = st.number_input("수량", min_value=1, value=1)
     with c3: submitted = st.form_submit_button("추가 ➕")
-        
+
     if submitted and input_name:
         st.session_state.cart.append({"name": input_name, "count": input_count})
         st.success(f"추가됨: {input_name}")
@@ -250,7 +380,7 @@ if st.session_state.cart:
             if st.button("삭제", key=f"del_cart_{i}"):
                 st.session_state.cart.pop(i)
                 st.rerun()
-    st.divider() 
+    st.divider()
     if st.button("목록 비우기 🗑️"):
         st.session_state.cart = []
         st.rerun()
@@ -278,20 +408,17 @@ if st.session_state.cart:
 st.divider()
 
 # =========================================================
-# 섹션 3: 물물교환 참고표 (기존 및 신규 커스텀 루트 탭 분리)
+# 섹션 3: 물물교환 참고표
 # =========================================================
 st.header("📚 물물교환 재료 참고표")
 st.markdown("""
 > **💡 필수 팁** > 6티어는 본인 특화는 자급, 나머지는 경매장 구매 추천!  
 > **그랜마 상인 + 윌리엄or교역파트너 부유선(6티어탈농만루트),알파카(6티어원루트) + 임프의 고급 보증서(필수!) >>> 탈틴 or 티르코네일 판매**""")
 
-# 스트림릿 탭 기능을 사용하여 기존/신규 분리
 tab2, tab1 = st.tabs(["🛠️ 6티어 탈농만 루트", "📚 기존 표준 루트"])
 
-# ----------------- 탭 1: 기존 표준 루트 -----------------
 with tab1:
     col1, col2, col3 = st.columns(3)
-
     with col1:
         st.markdown("### 🧪 포션 & 목공")
         st.markdown("""
@@ -308,7 +435,6 @@ with tab1:
         - 건초더미: **9개**
         - 독묻은 와이번 볼트: **9개**
         """)
-        
         st.markdown("""
         🛒 **교역소별 구매 목록 및 수량(구매순서는 페라 > 칼리다 > 오아시스 > 카루)**
      
@@ -319,7 +445,6 @@ with tab1:
         | **오아시스** | 7개 | 3개 | 2개 |
         | **카루** | 7개 | 3개 | **3개** |
        """)
-
     with col2:
         st.markdown("### 🧵 방직 & 공학")
         st.markdown("""
@@ -337,7 +462,6 @@ with tab1:
         - 에너지 증폭 장치: **6개**
         - 스핀 기어: **7개**
         """)
-
     with col3:
         st.markdown("### 💎 제련 & 기타")
         st.markdown("""
@@ -362,10 +486,8 @@ with tab1:
         - 월광 여울 이삭빵 박스: **2개**
         - 루멘 시럽: **2개** """)
 
-# ----------------- 탭 2: 신규 커스텀 루트 -----------------
 with tab2:
     col1_c, col2_c, col3_c = st.columns(3)
-
     with col1_c:
         st.markdown("### 🧪 포션 & 목공")
         st.markdown("""
@@ -382,7 +504,6 @@ with tab2:
         - 건초더미: **9개**
         - 독묻은 와이번 볼트: **9개**
         """)
-        
         st.markdown("""
         🛒 **교역소별 구매 목록 및 수량**<br>
         🛒 **윌리엄or교역파트너 + 부유선**<br>
@@ -395,7 +516,6 @@ with tab2:
         | **오아시스** | 7개 | 3개 | 2개 |
         | **카루** | 7개 | 3개 | **3개** |
        """, unsafe_allow_html=True)
-
     with col2_c:
         st.markdown("### 🧵 방직 & 공학")
         st.markdown("""
@@ -415,7 +535,6 @@ with tab2:
         - 스핀 기어: **7개**
         - 에메랄드 퓨즈: **7개**
         """)
-
     with col3_c:
         st.markdown("### 💎 제련 & 기타")
         st.markdown("""
@@ -461,14 +580,14 @@ df_history = load_sheet_data()
 if not df_history.empty:
     latest_data = df_history.iloc[-1]
     st.write("### 💡 현재 최신 경매장 시세")
-    
+
     st.subheader("기본 생산품")
     cols_basic = st.columns(3)
     for idx, item in enumerate(CATEGORIES["기본 생산품"]):
         with cols_basic[idx % 3]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
-            
+
     st.divider()
     st.subheader("가공품")
     col1, col2 = st.columns(2)
@@ -477,7 +596,7 @@ if not df_history.empty:
         for item in CATEGORIES["풍요로운 마법의 솥"]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
-        st.write("") 
+        st.write("")
         st.markdown("**반짝이는 마법의 솥**")
         for item in CATEGORIES["반짝이는 마법의 솥"]:
             price = latest_data.get(item, 0)
@@ -487,7 +606,7 @@ if not df_history.empty:
         for item in CATEGORIES["부드러운 마법의 솥"]:
             price = latest_data.get(item, 0)
             display_item_with_local_image(item, price)
-        st.write("") 
+        st.write("")
         st.markdown("**섬세한 마법의 솥**")
         for item in CATEGORIES["섬세한 마법의 솥"]:
             price = latest_data.get(item, 0)
@@ -558,7 +677,6 @@ with col_q1:
     for q_name in quest_names[:half_idx]:
         with st.container(border=True):
             q_info = DELIVERY_QUESTS[q_name]
-            # 코인 정보 제거 및 라벨 수정
             label = f"{q_name} (납품 {q_info['limit']}회)"
             if st.checkbox(label, key=f"chk_{q_name}"): selected_quests.append(q_name)
             tags_html = ""
@@ -571,7 +689,6 @@ with col_q2:
     for q_name in quest_names[half_idx:]:
         with st.container(border=True):
             q_info = DELIVERY_QUESTS[q_name]
-            # 코인 정보 제거 및 라벨 수정
             label = f"{q_name} (납품 {q_info['limit']}회)"
             if st.checkbox(label, key=f"chk_{q_name}"): selected_quests.append(q_name)
             tags_html = ""
@@ -582,23 +699,20 @@ with col_q2:
 
 st.divider()
 
-# 계산 전 배수를 입력받는 숫자 입력칸 추가
 multiplier = st.number_input("계산할 배수 (예: 3배 구매 진행 시 3 입력)", min_value=1, value=1, step=1)
 
 if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primary", key="btn_quest_calc"):
     if not selected_quests: st.warning("선택된 퀘스트가 없습니다. 위에서 퀘스트를 하나 이상 체크해주세요!")
     else:
         aggregated_materials = {}
-        # 코인 합산 로직 제거
         for q_name in selected_quests:
             q_data = DELIVERY_QUESTS[q_name]
             limit = q_data['limit']
             for mat_name, mat_count in q_data['materials'].items():
-                # 추가 입력받은 배수(multiplier)를 총 수량에 곱해줌
                 req_qty = mat_count * limit * multiplier
                 if mat_name in aggregated_materials: aggregated_materials[mat_name] += req_qty
                 else: aggregated_materials[mat_name] = req_qty
-                
+
         quest_total_price = 0
         quest_result = []
         progress_bar = st.progress(0, text="경매장 시세 조회 중...")
@@ -607,11 +721,10 @@ if st.button("체크된 납품 퀘스트 견적 확인하기 🚀", type="primar
             subtotal = price * count
             quest_total_price += subtotal
             quest_result.append({"재료명": item_name, "최저가": f"{price:,} G" if price > 0 else "매물 없음", "필요 수량": f"{count}개", "합계": f"{subtotal:,} G"})
-            time.sleep(0.3) 
+            time.sleep(0.3)
             progress_bar.progress((idx + 1) / len(aggregated_materials))
         progress_bar.empty()
-        
-        # 코인 출력 부분 제거됨
+
         st.metric("총 예상 구매 비용", f"{quest_total_price:,} Gold")
         st.table(quest_result)
 
