@@ -217,12 +217,30 @@ def load_sheet_data():
 # =========================================================
 st.header("🏆 납품 퀘스트 손익 분석 (시즌 말 탈농 가격 하락 대비)")
 
+# 퀘스트별 보상 개수 범위 정의
+# 1번 사진 (보상 1~3개): 케안 항구 무역 사무원, 아브네아 상점가 점원, 타라 큰손, 라흐 왕성 시종
+# 2번 사진 + 카브 항구 의상 디자이너 (보상 1~2개): 이멘 마하, 음유시인 캠프, 던바튼, 오스나 사일, 티르코네일, 카브 항구
+# 나머지 7회짜리: 보상 1개 고정
+REWARD_COUNT_RANGE = {
+    "케안 항구 무역 사무원의 주문":   [1, 2, 3],
+    "아브네아 상점가 점원의 주문":    [1, 2, 3],
+    "타라 '큰손'의 주문":            [1, 2, 3],
+    "라흐 왕성 시종의 주문":          [1, 2, 3],
+    "이멘 마하 인테리어 전문가의 주문": [1, 2],
+    "음유시인 캠프 방랑자의 주문":    [1, 2],
+    "던바튼 주민의 주문":             [1, 2],
+    "오스나 사일 산지기의 주문":      [1, 2],
+    "티르코네일 보부상의 주문":       [1, 2],
+    "카브 항구 의상 디자이너의 주문": [1, 2],
+}
+
 with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     st.markdown(f"""
-    - **재료비**: 각 퀘스트 납품 1회에 필요한 재료를 경매장 최저가로 구매 시 총 비용 (limit 횟수 × 재료비 합산)
-    - **보상 기대값**: 납품 1회당 보상 아이템 1개를 랜덤으로 받는다고 가정, 아래 5종 동일 확률 적용
-    - **손익** = 총 보상 기대값 − 총 재료비 (양수면 이득 🟢, 음수면 손해 🔴)
-    
+    - **재료비**: 납품 1회 재료를 경매장 최저가로 구매 시 비용 × 납품 횟수
+    - **보상 기대값**: 납품 1회당 아래 5종 중 랜덤 1개 (동일 확률 가정), 1회 평균 **{REWARD_EXPECTED_VALUE:,.0f} G**
+    - 퀘스트별로 보상 개수(1~3개)가 다르므로 각 행 드롭다운으로 경우의 수 선택 가능
+    - **손익** = 총 보상 기대값 − 총 재료비
+
     | 보상 아이템 | 상점 판매가 |
     |---|---|
     | 탈틴 농장 업그레이드 벽돌 | 10,000 G |
@@ -230,85 +248,82 @@ with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     | 탈틴 농장 업그레이드 도료 | 30,000 G |
     | 탈틴 농장 업그레이드 유리 | 40,000 G |
     | 탈틴 협회 열쇠 | 25,000 G |
-    
-    > **보상 기대값 (1회 평균)**: {REWARD_EXPECTED_VALUE:,.0f} G
-    
-    ⚠️ *보상 확률이 동일하지 않을 수 있으며, 퀘스트별 보상 풀이 다를 수 있습니다. 데이터 연구 후 수정 예정.*
     """)
 
-# 캐시된 시세 자동 조회 (5분 TTL — 만료 시 다음 로드에서 자동 갱신)
+# 시세 자동 조회 (5분 캐시)
 with st.spinner("납품 재료 경매장 시세 조회 중... (약 20초, 이후 5분간 캐시)"):
     price_map = get_all_quest_prices(FIXED_API_KEY)
 fetched_at = datetime.now().strftime('%H:%M:%S')
 
-# 퀘스트별 손익 계산
-roi_rows = []
-for q_name, q_data in DELIVERY_QUESTS.items():
-    limit = q_data['limit']
-    cost_per_run = sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items())
-    total_cost = cost_per_run * limit
-    total_reward = REWARD_EXPECTED_VALUE * limit
-    profit = total_reward - total_cost
-    missing = [m for m in q_data['materials'] if price_map.get(m, 0) == 0]
-    roi_rows.append({
-        "q_name": q_name,
-        "limit": limit,
-        "cost_per_run": cost_per_run,
-        "total_cost": total_cost,
-        "total_reward": total_reward,
-        "profit": profit,
-        "missing": missing,
-    })
-
-roi_rows.sort(key=lambda x: x["profit"], reverse=True)
-
-# 요약 메트릭
-profitable = sum(1 for r in roi_rows if r["profit"] > 0)
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("이득 퀘스트", f"{profitable}개")
-m2.metric("손해 퀘스트", f"{len(roi_rows) - profitable}개")
-m3.metric("보상 1회 기대값", f"{REWARD_EXPECTED_VALUE:,.0f} G")
-m4.metric("시세 갱신", fetched_at)
-
-# 손익 표 — pandas DataFrame으로 렌더링
-df_roi = pd.DataFrame([
-    {
-        "퀘스트명": r["q_name"] + (" ⚠️" if r["missing"] else ""),
-        "납품 횟수": r["limit"],
-        "1회 재료비": r["cost_per_run"],
-        "총 재료비": r["total_cost"],
-        "총 보상 기대값": int(r["total_reward"]),
-        "손익": int(r["profit"]),
-    }
-    for r in roi_rows
-])
-
-def color_profit(val):
-    if val > 0:
-        return "color: #00ffc8; font-weight: bold;"
-    elif val < 0:
-        return "color: #ff6b6b; font-weight: bold;"
-    return "color: #ffd166; font-weight: bold;"
-
-def fmt_gold(val):
-    return f"{val:+,.0f} G" if isinstance(val, (int, float)) else val
-
-df_display = df_roi.copy()
-df_display["1회 재료비"] = df_display["1회 재료비"].apply(lambda v: f"{v:,.0f} G")
-df_display["총 재료비"] = df_display["총 재료비"].apply(lambda v: f"{v:,.0f} G")
-df_display["총 보상 기대값"] = df_display["총 보상 기대값"].apply(lambda v: f"{v:,.0f} G")
-df_display["손익"] = df_display["손익"].apply(lambda v: f"🟢 {v:+,.0f} G" if v > 0 else (f"🔴 {v:+,.0f} G" if v < 0 else f"⚪ {v:+,.0f} G"))
-df_display["납품 횟수"] = df_display["납품 횟수"].apply(lambda v: f"{v}회")
-
-st.table(df_display.reset_index(drop=True))
-
+# 갱신 버튼 + 조회 시각
 col_refresh, col_cap = st.columns([1, 6])
 with col_refresh:
     if st.button("🔄 지금 새로고침", key="btn_roi_refresh"):
         st.cache_data.clear()
         st.rerun()
 with col_cap:
-    st.caption(f"※ 경매장 최저가 기준 | 보상 기대값 = {REWARD_EXPECTED_VALUE:,.0f} G × 납품 횟수 | 조회: {fetched_at} | 5분마다 자동 갱신")
+    st.caption(f"경매장 최저가 기준 | 조회: {fetched_at} | 5분마다 자동 갱신")
+
+st.divider()
+
+# 퀘스트별 손익 — 행마다 보상 개수 선택 드롭다운
+profitable_count = 0
+total_quests = len(DELIVERY_QUESTS)
+
+for q_name, q_data in DELIVERY_QUESTS.items():
+    limit = q_data['limit']
+    cost_per_run = sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items())
+    total_cost = cost_per_run * limit
+    missing = [m.replace("탈틴 농장 ", "") for m in q_data['materials'] if price_map.get(m, 0) == 0]
+    reward_range = REWARD_COUNT_RANGE.get(q_name, [1])
+
+    with st.container(border=True):
+        col_name, col_sel, col_cost, col_reward, col_profit = st.columns([3, 1.2, 1.5, 1.5, 1.5])
+
+        with col_name:
+            st.markdown(f"**{q_name}**")
+            st.caption(f"납품 {limit}회")
+            if missing:
+                st.caption(f"⚠️ 매물없음: {', '.join(missing)}")
+
+        with col_sel:
+            if len(reward_range) > 1:
+                options = [f"{n}개" for n in reward_range]
+                sel_label = st.selectbox(
+                    "보상 개수",
+                    options=options,
+                    key=f"reward_sel_{q_name}",
+                    label_visibility="collapsed"
+                )
+                reward_count = int(sel_label.replace("개", ""))
+            else:
+                reward_count = reward_range[0]
+                st.markdown(f"<div style='padding-top:6px; color:#aaa; font-size:13px;'>보상 {reward_count}개 고정</div>", unsafe_allow_html=True)
+
+        reward_per_run = REWARD_EXPECTED_VALUE * reward_count
+        total_reward = reward_per_run * limit
+        profit = int(total_reward - total_cost)
+        if profit > 0:
+            profitable_count += 1
+
+        with col_cost:
+            st.metric("총 재료비", f"{int(total_cost):,} G")
+        with col_reward:
+            st.metric("총 보상 기대값", f"{int(total_reward):,} G")
+        with col_profit:
+            if profit > 0:
+                st.metric("손익", f"🟢 +{profit:,} G")
+            elif profit < 0:
+                st.metric("손익", f"🔴 {profit:,} G")
+            else:
+                st.metric("손익", f"⚪ 0 G")
+
+# 하단 요약
+st.divider()
+m1, m2, m3 = st.columns(3)
+m1.metric("이득 퀘스트 (현재 설정 기준)", f"{profitable_count}개")
+m2.metric("손해 퀘스트", f"{total_quests - profitable_count}개")
+m3.metric("보상 1회 기대값", f"{int(REWARD_EXPECTED_VALUE):,} G")
 
 st.divider()
 
