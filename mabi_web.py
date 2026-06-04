@@ -126,7 +126,7 @@ st.title("💰 마비노기 물교 & 경매장 계산기")
 # =========================================================
 @st.cache_data(ttl=60)
 def get_all_quest_prices(key):
-    """납품 퀘스트 전체 재료 시세를 한 번에 조회 (5분 캐시)"""
+    """납품 퀘스트 전체 재료 시세를 한 번에 조회 (1분 캐시)"""
     all_materials = set()
     for q_data in DELIVERY_QUESTS.values():
         all_materials.update(q_data['materials'].keys())
