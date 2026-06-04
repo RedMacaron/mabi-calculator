@@ -135,6 +135,31 @@ st.title("💰 마비노기 물교 & 경매장 계산기")
 # =========================================================
 # 헬퍼 함수
 # =========================================================
+@st.cache_data(ttl=300)
+def get_all_quest_prices(key):
+    """납품 퀘스트 전체 재료 시세를 한 번에 조회 (5분 캐시)"""
+    all_materials = set()
+    for q_data in DELIVERY_QUESTS.values():
+        all_materials.update(q_data['materials'].keys())
+
+    price_map = {}
+    for mat in all_materials:
+        url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(mat)}"
+        headers = {"x-nxopen-api-key": key, "accept": "application/json"}
+        try:
+            res = requests.get(url, headers=headers)
+            if res.status_code == 200:
+                items = res.json().get('auction_item', [])
+                if items:
+                    items.sort(key=lambda x: x['auction_price_per_unit'])
+                    price_map[mat] = items[0]['auction_price_per_unit']
+                else:
+                    price_map[mat] = 0
+        except:
+            price_map[mat] = 0
+        time.sleep(0.3)
+    return price_map
+
 @st.cache_data(ttl=60)
 def get_price(item_name, key):
     url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item_name)}"
@@ -211,102 +236,93 @@ with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     ⚠️ *보상 확률이 동일하지 않을 수 있으며, 퀘스트별 보상 풀이 다를 수 있습니다. 데이터 연구 후 수정 예정.*
     """)
 
-if st.button("📊 손익 분석 시작 (경매장 시세 조회)", type="primary", key="btn_roi_calc"):
-    # 필요한 모든 재료 목록 수집 (중복 제거)
-    all_materials = set()
-    for q_data in DELIVERY_QUESTS.values():
-        all_materials.update(q_data['materials'].keys())
-    all_materials = list(all_materials)
+# 캐시된 시세 자동 조회 (5분 TTL — 만료 시 다음 로드에서 자동 갱신)
+with st.spinner("납품 재료 경매장 시세 조회 중... (약 20초, 이후 5분간 캐시)"):
+    price_map = get_all_quest_prices(FIXED_API_KEY)
+fetched_at = datetime.now().strftime('%H:%M:%S')
 
-    # 경매장 시세 일괄 조회
-    price_map = {}
-    prog = st.progress(0, text="경매장 시세 조회 중...")
-    for idx, mat in enumerate(all_materials):
-        price_map[mat] = get_price(mat, FIXED_API_KEY)
-        time.sleep(0.3)
-        prog.progress((idx + 1) / len(all_materials))
-    prog.empty()
+# 퀘스트별 손익 계산
+roi_rows = []
+for q_name, q_data in DELIVERY_QUESTS.items():
+    limit = q_data['limit']
+    cost_per_run = sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items())
+    total_cost = cost_per_run * limit
+    total_reward = REWARD_EXPECTED_VALUE * limit
+    profit = total_reward - total_cost
+    missing = [m for m in q_data['materials'] if price_map.get(m, 0) == 0]
+    roi_rows.append({
+        "q_name": q_name,
+        "limit": limit,
+        "cost_per_run": cost_per_run,
+        "total_cost": total_cost,
+        "total_reward": total_reward,
+        "profit": profit,
+        "missing": missing,
+    })
 
-    # 퀘스트별 손익 계산
-    rows = []
-    for q_name, q_data in DELIVERY_QUESTS.items():
-        limit = q_data['limit']
-        # 1회 재료비 계산
-        cost_per_run = sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items())
-        total_cost = cost_per_run * limit
-        total_reward = REWARD_EXPECTED_VALUE * limit
-        profit = total_reward - total_cost
+roi_rows.sort(key=lambda x: x["profit"], reverse=True)
 
-        # 매물 없는 재료 체크
-        missing = [m for m in q_data['materials'] if price_map.get(m, 0) == 0]
+# 요약 메트릭
+profitable = sum(1 for r in roi_rows if r["profit"] > 0)
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("이득 퀘스트", f"{profitable}개")
+m2.metric("손해 퀘스트", f"{len(roi_rows) - profitable}개")
+m3.metric("보상 1회 기대값", f"{REWARD_EXPECTED_VALUE:,.0f} G")
+m4.metric("시세 갱신", fetched_at)
 
-        rows.append({
-            "q_name": q_name,
-            "limit": limit,
-            "cost_per_run": cost_per_run,
-            "total_cost": total_cost,
-            "total_reward": total_reward,
-            "profit": profit,
-            "missing": missing,
-        })
+# 손익 표 렌더링
+table_rows_html = ""
+for r in roi_rows:
+    profit_val = r["profit"]
+    profit_str = f"{profit_val:+,.0f} G"
+    if profit_val > 0:
+        badge = f'<span class="badge-profit">🟢 {profit_str}</span>'
+    elif profit_val < 0:
+        badge = f'<span class="badge-loss">🔴 {profit_str}</span>'
+    else:
+        badge = f'<span class="badge-neutral">⚪ {profit_str}</span>'
 
-    # 손익 기준 내림차순 정렬
-    rows.sort(key=lambda x: x["profit"], reverse=True)
+    missing_note = ""
+    if r["missing"]:
+        short = [m.replace("탈틴 농장 ", "") for m in r["missing"]]
+        missing_note = f'<br><span style="color:#ff9999; font-size:11px;">⚠️ 매물없음: {", ".join(short)}</span>'
 
-    # 요약 메트릭
-    profitable = sum(1 for r in rows if r["profit"] > 0)
-    m1, m2, m3 = st.columns(3)
-    m1.metric("이득 퀘스트", f"{profitable}개")
-    m2.metric("손해 퀘스트", f"{len(rows) - profitable}개")
-    m3.metric("보상 1회 기대값", f"{REWARD_EXPECTED_VALUE:,.0f} G")
+    table_rows_html += f"""
+    <tr>
+        <td>{r['q_name']}</td>
+        <td style="text-align:center;">{r['limit']}회</td>
+        <td style="text-align:right;">{r['cost_per_run']:,.0f} G</td>
+        <td style="text-align:right;">{r['total_cost']:,.0f} G{missing_note}</td>
+        <td style="text-align:right;">{r['total_reward']:,.0f} G</td>
+        <td style="text-align:center;">{badge}</td>
+    </tr>
+    """
 
-    # 손익 표 렌더링
-    table_rows_html = ""
-    for r in rows:
-        profit_val = r["profit"]
-        profit_str = f"{profit_val:+,.0f} G"
-        if profit_val > 0:
-            badge = f'<span class="badge-profit">🟢 {profit_str}</span>'
-        elif profit_val < 0:
-            badge = f'<span class="badge-loss">🔴 {profit_str}</span>'
-        else:
-            badge = f'<span class="badge-neutral">⚪ {profit_str}</span>'
+st.markdown(f"""
+<table class="profit-table">
+  <thead>
+    <tr>
+      <th>퀘스트명</th>
+      <th style="text-align:center;">납품 횟수</th>
+      <th style="text-align:right;">1회 재료비</th>
+      <th style="text-align:right;">총 재료비</th>
+      <th style="text-align:right;">총 보상 기대값</th>
+      <th style="text-align:center;">손익</th>
+    </tr>
+  </thead>
+  <tbody>
+    {table_rows_html}
+  </tbody>
+</table>
+""", unsafe_allow_html=True)
 
-        missing_note = ""
-        if r["missing"]:
-            short = [m.replace("탈틴 농장 ", "") for m in r["missing"]]
-            missing_note = f'<br><span style="color:#ff9999; font-size:11px;">⚠️ 매물없음: {", ".join(short)}</span>'
-
-        table_rows_html += f"""
-        <tr>
-            <td>{r['q_name']}</td>
-            <td style="text-align:center;">{r['limit']}회</td>
-            <td style="text-align:right;">{r['cost_per_run']:,.0f} G</td>
-            <td style="text-align:right;">{r['total_cost']:,.0f} G{missing_note}</td>
-            <td style="text-align:right;">{r['total_reward']:,.0f} G</td>
-            <td style="text-align:center;">{badge}</td>
-        </tr>
-        """
-
-    st.markdown(f"""
-    <table class="profit-table">
-      <thead>
-        <tr>
-          <th>퀘스트명</th>
-          <th style="text-align:center;">납품 횟수</th>
-          <th style="text-align:right;">1회 재료비</th>
-          <th style="text-align:right;">총 재료비</th>
-          <th style="text-align:right;">총 보상 기대값</th>
-          <th style="text-align:center;">손익</th>
-        </tr>
-      </thead>
-      <tbody>
-        {table_rows_html}
-      </tbody>
-    </table>
-    """, unsafe_allow_html=True)
-
-    st.caption(f"※ 재료비는 경매장 최저가 기준 | 보상 기대값 = {REWARD_EXPECTED_VALUE:,.0f} G × 납품 횟수 | 조회 시각: {datetime.now().strftime('%H:%M:%S')}")
+col_refresh, col_cap = st.columns([1, 6])
+with col_refresh:
+    if st.button("🔄 지금 새로고침", key="btn_roi_refresh"):
+        st.cache_data.clear()
+        st.rerun()
+with col_cap:
+    st.caption(f"※ 경매장 최저가 기준 | 보상 기대값 = {REWARD_EXPECTED_VALUE:,.0f} G × 납품 횟수 | 조회: {fetched_at} | 5분마다 자동 갱신")
 
 st.divider()
 
