@@ -317,7 +317,7 @@ for q_name, q_data in DELIVERY_QUESTS.items():
             if is_fixed:
                 st.markdown("**열쇠·업템 각 1개 고정**")
             else:
-                st.markdown(f"**열쇠 {key_range[0]}~{key_range[-1]}개 / 업템 {upg_range[0]}~{upg_range[-1]}개**")
+                st.markdown(f"**열쇠 {key_range[0]} ~ {key_range[-1]}개 / 업템 {upg_range[0]} ~ {upg_range[-1]}개**")
 
         # 시뮬레이터 expander
         with st.expander("🎲 보상 시뮬레이터", expanded=False):
