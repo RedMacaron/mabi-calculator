@@ -253,7 +253,7 @@ with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     """)
 
 # 시세 자동 조회 (1분 캐시)
-with st.spinner("납품 재료 경매장 시세 조회 중... (약 20초, 이후 5분간 캐시)"):
+with st.spinner("납품 재료 경매장 시세 조회 중... (약 20초, 이후 1분간 캐시)"):
     price_map = get_all_quest_prices(FIXED_API_KEY)
 fetched_at = datetime.now().strftime('%H:%M:%S')
 
@@ -646,7 +646,7 @@ st.markdown("""
 st.divider()
 st.header("📈 탈틴 농장 실시간 시세")
 
-with st.spinner("탈틴 농장 아이템 시세 조회 중... (5분간 캐시)"):
+with st.spinner("탈틴 농장 아이템 시세 조회 중... (1분간 캐시)"):
     farm_price_map = get_farm_prices(FIXED_API_KEY)
 farm_fetched_at = datetime.now().strftime('%H:%M:%S')
 
