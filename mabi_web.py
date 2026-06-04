@@ -277,8 +277,8 @@ df_roi = pd.DataFrame([
         "납품 횟수": r["limit"],
         "1회 재료비": r["cost_per_run"],
         "총 재료비": r["total_cost"],
-        "총 보상 기대값": r["total_reward"],
-        "손익": r["profit"],
+        "총 보상 기대값": int(r["total_reward"]),
+        "손익": int(r["profit"]),
     }
     for r in roi_rows
 ])
