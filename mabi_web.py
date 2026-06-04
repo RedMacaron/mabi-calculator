@@ -221,18 +221,24 @@ st.header("🏆 납품 퀘스트 손익 분석 (시즌 말 탈농 가격 하락 
 # 1번 사진 (보상 1~3개): 케안 항구 무역 사무원, 아브네아 상점가 점원, 타라 큰손, 라흐 왕성 시종
 # 2번 사진 + 카브 항구 의상 디자이너 (보상 1~2개): 이멘 마하, 음유시인 캠프, 던바튼, 오스나 사일, 티르코네일, 카브 항구
 # 나머지 7회짜리: 보상 1개 고정
+# 퀘스트별 (열쇠 개수 범위, 업그레이드 템 개수 범위) 정의
+# 7회짜리: 둘 다 1개 고정
+# 1번사진 4개: 둘 다 1~3개
+# 2번사진+카브항구: 둘 다 1~2개
 REWARD_COUNT_RANGE = {
-    "케안 항구 무역 사무원의 주문":   [1, 2, 3],
-    "아브네아 상점가 점원의 주문":    [1, 2, 3],
-    "타라 '큰손'의 주문":            [1, 2, 3],
-    "라흐 왕성 시종의 주문":          [1, 2, 3],
-    "이멘 마하 인테리어 전문가의 주문": [1, 2],
-    "음유시인 캠프 방랑자의 주문":    [1, 2],
-    "던바튼 주민의 주문":             [1, 2],
-    "오스나 사일 산지기의 주문":      [1, 2],
-    "티르코네일 보부상의 주문":       [1, 2],
-    "카브 항구 의상 디자이너의 주문": [1, 2],
+    # (열쇠 범위, 업그레이드 템 범위)
+    "케안 항구 무역 사무원의 주문":    ([1,2,3], [1,2,3]),
+    "아브네아 상점가 점원의 주문":     ([1,2,3], [1,2,3]),
+    "타라 '큰손'의 주문":             ([1,2,3], [1,2,3]),
+    "라흐 왕성 시종의 주문":           ([1,2,3], [1,2,3]),
+    "이멘 마하 인테리어 전문가의 주문": ([1,2],   [1,2]),
+    "음유시인 캠프 방랑자의 주문":     ([1,2],   [1,2]),
+    "던바튼 주민의 주문":              ([1,2],   [1,2]),
+    "오스나 사일 산지기의 주문":       ([1,2],   [1,2]),
+    "티르코네일 보부상의 주문":        ([1,2],   [1,2]),
+    "카브 항구 의상 디자이너의 주문":  ([1,2],   [1,2]),
 }
+# 7회짜리는 정의 없으면 (1개 고정, 1개 고정) 처리
 
 with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     st.markdown(f"""
@@ -266,21 +272,35 @@ with col_cap:
 
 st.divider()
 
-# 퀘스트별 손익 — 1회 재료비 표시 + expander로 보상 개수별 경우의 수 표
+# 퀘스트별 손익 — 헤더 + expander 슬라이더 시뮬레이터
+
+KEY_VALUE = 25000
+UPGRADE_ITEMS = {
+    "벽돌": 10000,
+    "철판": 20000,
+    "도료": 30000,
+    "유리": 40000,
+}
 
 def profit_badge(p):
     if p > 0:   return f"🟢 +{p:,} G"
     elif p < 0: return f"🔴 {p:,} G"
     else:       return f"⚪ 0 G"
 
+def profit_color(p):
+    if p > 0:   return "#00ffc8"
+    elif p < 0: return "#ff6b6b"
+    else:       return "#ffd166"
+
 for q_name, q_data in DELIVERY_QUESTS.items():
     limit = q_data['limit']
     cost_per_run = int(sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items()))
     missing = [m.replace("탈틴 농장 ", "") for m in q_data['materials'] if price_map.get(m, 0) == 0]
-    reward_range = REWARD_COUNT_RANGE.get(q_name, [1])
+    key_range, upg_range = REWARD_COUNT_RANGE.get(q_name, ([1], [1]))
+    is_fixed = len(key_range) == 1 and len(upg_range) == 1
 
     with st.container(border=True):
-        # 헤더 행: 퀘스트명 / 납품횟수 / 1회 재료비 / 보상 범위
+        # 헤더
         c1, c2, c3, c4 = st.columns([4, 1, 2, 2])
         with c1:
             st.markdown(f"**{q_name}**")
@@ -293,27 +313,70 @@ for q_name, q_data in DELIVERY_QUESTS.items():
             st.caption("1회 재료비")
             st.markdown(f"**{cost_per_run:,} G**")
         with c4:
-            st.caption("보상 개수 범위")
-            if len(reward_range) > 1:
-                st.markdown(f"**{reward_range[0]}~{reward_range[-1]}개 (랜덤)**")
+            st.caption("보상 범위")
+            if is_fixed:
+                st.markdown("**열쇠·업템 각 1개 고정**")
             else:
-                st.markdown(f"**{reward_range[0]}개 고정**")
+                st.markdown(f"**열쇠 {key_range[0]}~{key_range[-1]}개 / 업템 {upg_range[0]}~{upg_range[-1]}개**")
 
-        # expander: 보상 개수별 경우의 수 표
-        exp_label = "📊 보상 개수별 손익 보기" if len(reward_range) > 1 else "📊 손익 보기"
-        with st.expander(exp_label, expanded=False):
-            rows = []
-            for rc in reward_range:
-                reward_val = int(REWARD_EXPECTED_VALUE * rc)
-                profit_val = reward_val - cost_per_run
-                rows.append({
-                    "보상 개수": f"{rc}개",
-                    "1회 재료비": f"{cost_per_run:,} G",
-                    "1회 보상 기대값": f"{reward_val:,} G",
-                    "1회 손익": profit_badge(profit_val),
-                })
-            df_case = pd.DataFrame(rows)
-            st.table(df_case.reset_index(drop=True))
+        # 시뮬레이터 expander
+        with st.expander("🎲 보상 시뮬레이터", expanded=False):
+            s1, s2, s3 = st.columns([1, 2, 1])
+
+            with s1:
+                st.caption("🗝️ 열쇠 개수")
+                if is_fixed:
+                    sel_key = 1
+                    st.markdown("**1개 고정**")
+                else:
+                    sel_key = st.select_slider(
+                        "열쇠",
+                        options=key_range,
+                        value=key_range[0],
+                        key=f"key_slider_{q_name}",
+                        label_visibility="collapsed",
+                        format_func=lambda x: f"{x}개"
+                    )
+
+            with s2:
+                st.caption("🧱 업그레이드 템 종류")
+                sel_upg_name = st.radio(
+                    "업템 종류",
+                    options=list(UPGRADE_ITEMS.keys()),
+                    horizontal=True,
+                    key=f"upg_type_{q_name}",
+                    label_visibility="collapsed",
+                    format_func=lambda x: f"{x} ({UPGRADE_ITEMS[x]//10000}만G)"
+                )
+                st.caption("🔢 업그레이드 템 개수")
+                if is_fixed:
+                    sel_upg_cnt = 1
+                    st.markdown("**1개 고정**")
+                else:
+                    sel_upg_cnt = st.select_slider(
+                        "업템 개수",
+                        options=upg_range,
+                        value=upg_range[0],
+                        key=f"upg_slider_{q_name}",
+                        label_visibility="collapsed",
+                        format_func=lambda x: f"{x}개"
+                    )
+
+            # 결과 계산
+            reward_val = KEY_VALUE * sel_key + UPGRADE_ITEMS[sel_upg_name] * sel_upg_cnt
+            profit_val = reward_val - cost_per_run
+            color = profit_color(profit_val)
+
+            with s3:
+                st.caption("📊 결과")
+                st.markdown(f"재료비 **{cost_per_run:,} G**")
+                st.markdown(f"보상 합계 **{reward_val:,} G**")
+                st.markdown(
+                    f"<div style='font-size:18px; font-weight:bold; color:{color};'>{profit_badge(profit_val)}</div>",
+                    unsafe_allow_html=True
+                )
+
+st.caption("※ 열쇠 1개 = 25,000 G | 업그레이드 템 가격: 벽돌 1만 / 철판 2만 / 도료 3만 / 유리 4만 | 1회 납품 기준")
 
 st.divider()
 
