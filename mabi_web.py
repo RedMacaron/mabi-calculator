@@ -266,64 +266,54 @@ with col_cap:
 
 st.divider()
 
-# 퀘스트별 손익 — 행마다 보상 개수 선택 드롭다운
-profitable_count = 0
-total_quests = len(DELIVERY_QUESTS)
+# 퀘스트별 손익 — 1회 재료비 표시 + expander로 보상 개수별 경우의 수 표
+
+def profit_badge(p):
+    if p > 0:   return f"🟢 +{p:,} G"
+    elif p < 0: return f"🔴 {p:,} G"
+    else:       return f"⚪ 0 G"
 
 for q_name, q_data in DELIVERY_QUESTS.items():
     limit = q_data['limit']
-    cost_per_run = sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items())
-    total_cost = cost_per_run * limit
+    cost_per_run = int(sum(price_map.get(mat, 0) * cnt for mat, cnt in q_data['materials'].items()))
     missing = [m.replace("탈틴 농장 ", "") for m in q_data['materials'] if price_map.get(m, 0) == 0]
     reward_range = REWARD_COUNT_RANGE.get(q_name, [1])
 
     with st.container(border=True):
-        col_name, col_sel, col_cost, col_reward, col_profit = st.columns([3, 1.2, 1.5, 1.5, 1.5])
-
-        with col_name:
+        # 헤더 행: 퀘스트명 / 납품횟수 / 1회 재료비 / 보상 범위
+        c1, c2, c3, c4 = st.columns([4, 1, 2, 2])
+        with c1:
             st.markdown(f"**{q_name}**")
-            st.caption(f"납품 {limit}회")
             if missing:
                 st.caption(f"⚠️ 매물없음: {', '.join(missing)}")
-
-        with col_sel:
+        with c2:
+            st.caption("납품 횟수")
+            st.markdown(f"**{limit}회**")
+        with c3:
+            st.caption("1회 재료비")
+            st.markdown(f"**{cost_per_run:,} G**")
+        with c4:
+            st.caption("보상 개수 범위")
             if len(reward_range) > 1:
-                options = [f"{n}개" for n in reward_range]
-                sel_label = st.selectbox(
-                    "보상 개수",
-                    options=options,
-                    key=f"reward_sel_{q_name}",
-                    label_visibility="collapsed"
-                )
-                reward_count = int(sel_label.replace("개", ""))
+                st.markdown(f"**{reward_range[0]}~{reward_range[-1]}개 (랜덤)**")
             else:
-                reward_count = reward_range[0]
-                st.markdown(f"<div style='padding-top:6px; color:#aaa; font-size:13px;'>보상 {reward_count}개 고정</div>", unsafe_allow_html=True)
+                st.markdown(f"**{reward_range[0]}개 고정**")
 
-        reward_per_run = REWARD_EXPECTED_VALUE * reward_count
-        total_reward = reward_per_run * limit
-        profit = int(total_reward - total_cost)
-        if profit > 0:
-            profitable_count += 1
-
-        with col_cost:
-            st.metric("총 재료비", f"{int(total_cost):,} G")
-        with col_reward:
-            st.metric("총 보상 기대값", f"{int(total_reward):,} G")
-        with col_profit:
-            if profit > 0:
-                st.metric("손익", f"🟢 +{profit:,} G")
-            elif profit < 0:
-                st.metric("손익", f"🔴 {profit:,} G")
-            else:
-                st.metric("손익", f"⚪ 0 G")
-
-# 하단 요약
-st.divider()
-m1, m2, m3 = st.columns(3)
-m1.metric("이득 퀘스트 (현재 설정 기준)", f"{profitable_count}개")
-m2.metric("손해 퀘스트", f"{total_quests - profitable_count}개")
-m3.metric("보상 1회 기대값", f"{int(REWARD_EXPECTED_VALUE):,} G")
+        # expander: 보상 개수별 경우의 수 표
+        exp_label = "📊 보상 개수별 손익 보기" if len(reward_range) > 1 else "📊 손익 보기"
+        with st.expander(exp_label, expanded=False):
+            rows = []
+            for rc in reward_range:
+                reward_val = int(REWARD_EXPECTED_VALUE * rc)
+                profit_val = reward_val - cost_per_run
+                rows.append({
+                    "보상 개수": f"{rc}개",
+                    "1회 재료비": f"{cost_per_run:,} G",
+                    "1회 보상 기대값": f"{reward_val:,} G",
+                    "1회 손익": profit_badge(profit_val),
+                })
+            df_case = pd.DataFrame(rows)
+            st.table(df_case.reset_index(drop=True))
 
 st.divider()
 
