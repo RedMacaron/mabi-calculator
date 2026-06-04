@@ -126,7 +126,7 @@ st.title("💰 마비노기 물교 & 경매장 계산기")
 # =========================================================
 @st.cache_data(ttl=60)
 def fetch_all_prices(key):
-    # 납품 재료 + 탈농 아이템 전체를 한 번에 조회 (10분 캐시)
+    # 납품 재료 + 탈농 아이템 전체를 한 번에 조회 (1분 캐시)
     item_set = set()
     for q_data in DELIVERY_QUESTS.values():
         item_set.update(q_data['materials'].keys())
@@ -235,7 +235,7 @@ with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     """)
 
 # 시세 자동 조회 (5분 캐시)
-with st.spinner("납품 재료 경매장 시세 조회 중... (최초 1회, 이후 10분간 캐시)"):
+with st.spinner("납품 재료 경매장 시세 조회 중... (1분간 캐시)"):
     price_map = fetch_all_prices(FIXED_API_KEY)
 fetched_at = datetime.now().strftime('%H:%M:%S')
 
@@ -246,7 +246,7 @@ with col_refresh:
         st.cache_data.clear()
         st.rerun()
 with col_cap:
-    st.caption(f"경매장 최저가 기준 | 조회: {fetched_at} | 10분마다 자동 갱신")
+    st.caption(f"경매장 최저가 기준 | 조회: {fetched_at} | 1분마다 자동 갱신")
 
 st.divider()
 
@@ -638,7 +638,7 @@ with col_farm_refresh:
         st.cache_data.clear()
         st.rerun()
 with col_farm_cap:
-    st.caption(f"경매장 최저가 기준 | 조회: {farm_fetched_at} | 10분마다 자동 갱신")
+    st.caption(f"경매장 최저가 기준 | 조회: {farm_fetched_at} | 1분마다 자동 갱신")
 
 st.subheader("기본 생산품")
 cols_basic = st.columns(3)
