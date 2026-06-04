@@ -270,51 +270,41 @@ m2.metric("손해 퀘스트", f"{len(roi_rows) - profitable}개")
 m3.metric("보상 1회 기대값", f"{REWARD_EXPECTED_VALUE:,.0f} G")
 m4.metric("시세 갱신", fetched_at)
 
-# 손익 표 렌더링
-table_rows_html = ""
-for r in roi_rows:
-    profit_val = r["profit"]
-    profit_str = f"{profit_val:+,.0f} G"
-    if profit_val > 0:
-        badge = f'<span class="badge-profit">🟢 {profit_str}</span>'
-    elif profit_val < 0:
-        badge = f'<span class="badge-loss">🔴 {profit_str}</span>'
-    else:
-        badge = f'<span class="badge-neutral">⚪ {profit_str}</span>'
+# 손익 표 — pandas DataFrame으로 렌더링
+df_roi = pd.DataFrame([
+    {
+        "퀘스트명": r["q_name"] + (" ⚠️" if r["missing"] else ""),
+        "납품 횟수": r["limit"],
+        "1회 재료비": r["cost_per_run"],
+        "총 재료비": r["total_cost"],
+        "총 보상 기대값": r["total_reward"],
+        "손익": r["profit"],
+    }
+    for r in roi_rows
+])
 
-    missing_note = ""
-    if r["missing"]:
-        short = [m.replace("탈틴 농장 ", "") for m in r["missing"]]
-        missing_note = f'<br><span style="color:#ff9999; font-size:11px;">⚠️ 매물없음: {", ".join(short)}</span>'
+def color_profit(val):
+    if val > 0:
+        return "color: #00ffc8; font-weight: bold;"
+    elif val < 0:
+        return "color: #ff6b6b; font-weight: bold;"
+    return "color: #ffd166; font-weight: bold;"
 
-    table_rows_html += f"""
-    <tr>
-        <td>{r['q_name']}</td>
-        <td style="text-align:center;">{r['limit']}회</td>
-        <td style="text-align:right;">{r['cost_per_run']:,.0f} G</td>
-        <td style="text-align:right;">{r['total_cost']:,.0f} G{missing_note}</td>
-        <td style="text-align:right;">{r['total_reward']:,.0f} G</td>
-        <td style="text-align:center;">{badge}</td>
-    </tr>
-    """
+def fmt_gold(val):
+    return f"{val:+,.0f} G" if isinstance(val, (int, float)) else val
 
-st.markdown(f"""
-<table class="profit-table">
-  <thead>
-    <tr>
-      <th>퀘스트명</th>
-      <th style="text-align:center;">납품 횟수</th>
-      <th style="text-align:right;">1회 재료비</th>
-      <th style="text-align:right;">총 재료비</th>
-      <th style="text-align:right;">총 보상 기대값</th>
-      <th style="text-align:center;">손익</th>
-    </tr>
-  </thead>
-  <tbody>
-    {table_rows_html}
-  </tbody>
-</table>
-""", unsafe_allow_html=True)
+gold_cols = ["1회 재료비", "총 재료비", "총 보상 기대값", "손익"]
+
+styled = (
+    df_roi.style
+    .format({c: lambda v: f"{v:,.0f} G" for c in ["1회 재료비", "총 재료비", "총 보상 기대값"]})
+    .format({"손익": lambda v: f"{v:+,.0f} G"})
+    .applymap(color_profit, subset=["손익"])
+    .set_properties(**{"text-align": "right"}, subset=["1회 재료비", "총 재료비", "총 보상 기대값", "손익"])
+    .set_properties(**{"text-align": "center"}, subset=["납품 횟수"])
+)
+
+st.dataframe(styled, use_container_width=True, hide_index=True)
 
 col_refresh, col_cap = st.columns([1, 6])
 with col_refresh:
