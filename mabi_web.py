@@ -3,13 +3,9 @@ import requests
 import urllib.parse
 import time
 import pandas as pd
-import gspread
-import json
-import plotly.express as px
 import base64
 import os
 from datetime import datetime
-from oauth2client.service_account import ServiceAccountCredentials
 
 # =========================================================
 # 설정 및 변수 선언
@@ -27,13 +23,6 @@ SHOPPING_LIST = {
     "산딸기 크림 소스 박스": 2,
     "루멘 시럽": 2
 }
-
-SPECIAL_ITEMS = [
-    "노랑망태버섯", "설련화", "브리움 우유", "카넬리안", "여울 이삭",
-    "아벤츄린", "밀키쿼츠", "남동석", "악마의 손가락", "산딸기",
-    "적철석", "신비한 깃털", "루멘 플랜트", "힐웬 광정", "실리엔 응축액",
-    "월광 당근", "백연석", "마력 심재핵", "빛나는 양털"
-]
 
 CATEGORIES = {
     "기본 생산품": [
@@ -196,21 +185,28 @@ def display_item_with_local_image(item_name, price):
     st.markdown(html_code, unsafe_allow_html=True)
 
 @st.cache_data(ttl=60)
-def load_sheet_data():
-    try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds_dict = json.loads(st.secrets["google_credentials"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-        sheet = client.open("Mabi_DB").sheet1
-        data = sheet.get_all_records()
-        df = pd.DataFrame(data)
-        if not df.empty:
-            df = df.set_index('시간')
-        return df
-    except Exception as e:
-        st.error(f"구글 시트 연동 오류: {e}")
-        return pd.DataFrame()
+def get_farm_prices(key):
+    """탈틴 농장 전체 아이템 시세 일괄 조회 """
+    all_items = []
+    for items in CATEGORIES.values():
+        all_items.extend(items)
+    price_map = {}
+    for item in all_items:
+        url = f"https://open.api.nexon.com/mabinogi/v1/auction/list?item_name={urllib.parse.quote(item)}"
+        headers = {"x-nxopen-api-key": key, "accept": "application/json"}
+        try:
+            res = requests.get(url, headers=headers)
+            if res.status_code == 200:
+                items_data = res.json().get('auction_item', [])
+                if items_data:
+                    items_data.sort(key=lambda x: x['auction_price_per_unit'])
+                    price_map[item] = items_data[0]['auction_price_per_unit']
+                else:
+                    price_map[item] = 0
+        except:
+            price_map[item] = 0
+        time.sleep(0.3)
+    return price_map
 
 # =========================================================
 # ★ 섹션 0: 납품 손익 분석 (최상단)
@@ -256,7 +252,7 @@ with st.expander("ℹ️ 계산 방식 안내", expanded=False):
     | 탈틴 협회 열쇠 | 25,000 G |
     """)
 
-# 시세 자동 조회 (5분 캐시)
+# 시세 자동 조회 (1분 캐시)
 with st.spinner("납품 재료 경매장 시세 조회 중... (약 20초, 이후 5분간 캐시)"):
     price_map = get_all_quest_prices(FIXED_API_KEY)
 fetched_at = datetime.now().strftime('%H:%M:%S')
@@ -645,83 +641,48 @@ st.markdown("""
 """)
 
 # =========================================================
-# 섹션 5: 탈틴 농장 시세 현황 및 1주 그래프
+# 섹션 5: 탈틴 농장 실시간 시세
 # =========================================================
 st.divider()
-st.header("📈 탈틴 농장 실시간 시세 및 1주 그래프")
-df_history = load_sheet_data()
+st.header("📈 탈틴 농장 실시간 시세")
 
-if not df_history.empty:
-    latest_data = df_history.iloc[-1]
-    st.write("### 💡 현재 최신 경매장 시세")
+with st.spinner("탈틴 농장 아이템 시세 조회 중... (5분간 캐시)"):
+    farm_price_map = get_farm_prices(FIXED_API_KEY)
+farm_fetched_at = datetime.now().strftime('%H:%M:%S')
 
-    st.subheader("기본 생산품")
-    cols_basic = st.columns(3)
-    for idx, item in enumerate(CATEGORIES["기본 생산품"]):
-        with cols_basic[idx % 3]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
+col_farm_refresh, col_farm_cap = st.columns([1, 6])
+with col_farm_refresh:
+    if st.button("🔄 새로고침", key="btn_farm_refresh"):
+        st.cache_data.clear()
+        st.rerun()
+with col_farm_cap:
+    st.caption(f"경매장 최저가 기준 | 조회: {farm_fetched_at} | 5분마다 자동 갱신")
 
-    st.divider()
-    st.subheader("가공품")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**풍요로운 마법의 솥**")
-        for item in CATEGORIES["풍요로운 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-        st.write("")
-        st.markdown("**반짝이는 마법의 솥**")
-        for item in CATEGORIES["반짝이는 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-    with col2:
-        st.markdown("**부드러운 마법의 솥**")
-        for item in CATEGORIES["부드러운 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
-        st.write("")
-        st.markdown("**섬세한 마법의 솥**")
-        for item in CATEGORIES["섬세한 마법의 솥"]:
-            price = latest_data.get(item, 0)
-            display_item_with_local_image(item, price)
+st.subheader("기본 생산품")
+cols_basic = st.columns(3)
+for idx, item in enumerate(CATEGORIES["기본 생산품"]):
+    with cols_basic[idx % 3]:
+        display_item_with_local_image(item, farm_price_map.get(item, 0))
 
-    st.divider()
-    st.write("### 📊 농장 작물 시세 변동 추이")
-    farm_items = [col for col in df_history.columns if col not in SPECIAL_ITEMS and col != "시간"]
-    selected_farm = st.multiselect("그래프에서 확인할 아이템을 선택하세요", farm_items, default=farm_items[:2], key="farm_multiselect_unique")
-
-    if selected_farm:
-        df_history.index = pd.to_datetime(df_history.index)
-        fig_farm = px.line(df_history[selected_farm], template="plotly_dark")
-        fig_farm.update_layout(xaxis=dict(tickformat="%Y-%m-%d\n%H:%M", tickangle=0), yaxis_title="가격(G)", yaxis_tickformat=",", legend_title_text="농장 아이템", hovermode="x unified")
-        st.plotly_chart(fig_farm, use_container_width=True, key="farm_chart_id")
-
-# =========================================================
-# 섹션 6: 특화 채집 시즌 실시간 현황 및 그래프
-# =========================================================
 st.divider()
-st.header("💎 특화 채집 시즌 실시간 현황")
-
-if not df_history.empty:
-    latest_data = df_history.iloc[-1]
-    st.write("### 💰 특화 채집 최저가 요약")
-    cols_spec = st.columns(4)
-    for i, item_name in enumerate(SPECIAL_ITEMS):
-        if item_name in latest_data:
-            price = latest_data[item_name]
-            with cols_spec[i % 4]: display_item_with_local_image(item_name, price)
-
-    st.divider()
-    available_special = [item for item in SPECIAL_ITEMS if item in df_history.columns]
-    if available_special:
-        st.write("### 📈 특화 채집 시세 변동 추이")
-        selected_special = st.multiselect("확인할 특화 아이템을 선택하세요", available_special, default=available_special[:3], key="special_multiselect_unique")
-        if selected_special:
-            df_history.index = pd.to_datetime(df_history.index)
-            fig_special = px.line(df_history[selected_special], template="plotly_dark")
-            fig_special.update_layout(xaxis=dict(tickformat="%Y-%m-%d\n%H:%M", tickangle=0), yaxis_title="가격(G)", yaxis_tickformat=",", legend_title_text="특화 아이템", hovermode="x unified")
-            st.plotly_chart(fig_special, use_container_width=True, key="special_chart_id")
+st.subheader("가공품")
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown("**풍요로운 마법의 솥**")
+    for item in CATEGORIES["풍요로운 마법의 솥"]:
+        display_item_with_local_image(item, farm_price_map.get(item, 0))
+    st.write("")
+    st.markdown("**반짝이는 마법의 솥**")
+    for item in CATEGORIES["반짝이는 마법의 솥"]:
+        display_item_with_local_image(item, farm_price_map.get(item, 0))
+with col2:
+    st.markdown("**부드러운 마법의 솥**")
+    for item in CATEGORIES["부드러운 마법의 솥"]:
+        display_item_with_local_image(item, farm_price_map.get(item, 0))
+    st.write("")
+    st.markdown("**섬세한 마법의 솥**")
+    for item in CATEGORIES["섬세한 마법의 솥"]:
+        display_item_with_local_image(item, farm_price_map.get(item, 0))
 
 # =========================================================
 # 섹션 7: 생활 협회 납품 퀘스트 계산기
