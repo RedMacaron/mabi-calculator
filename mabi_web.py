@@ -329,11 +329,11 @@ for q_name, q_data in DELIVERY_QUESTS.items():
                     sel_key = 1
                     st.markdown("**1개 고정**")
                 else:
-                    sel_key = st.select_slider(
-                        "열쇠",
+                    sel_key = st.radio(
+                        "열쇠 개수",
                         options=key_range,
-                        value=key_range[0],
-                        key=f"key_slider_{q_name}",
+                        horizontal=True,
+                        key=f"key_radio_{q_name}",
                         label_visibility="collapsed",
                         format_func=lambda x: f"{x}개"
                     )
@@ -353,11 +353,11 @@ for q_name, q_data in DELIVERY_QUESTS.items():
                     sel_upg_cnt = 1
                     st.markdown("**1개 고정**")
                 else:
-                    sel_upg_cnt = st.select_slider(
+                    sel_upg_cnt = st.radio(
                         "업템 개수",
                         options=upg_range,
-                        value=upg_range[0],
-                        key=f"upg_slider_{q_name}",
+                        horizontal=True,
+                        key=f"upg_radio_{q_name}",
                         label_visibility="collapsed",
                         format_func=lambda x: f"{x}개"
                     )
