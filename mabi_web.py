@@ -293,18 +293,14 @@ def color_profit(val):
 def fmt_gold(val):
     return f"{val:+,.0f} G" if isinstance(val, (int, float)) else val
 
-gold_cols = ["1회 재료비", "총 재료비", "총 보상 기대값", "손익"]
+df_display = df_roi.copy()
+df_display["1회 재료비"] = df_display["1회 재료비"].apply(lambda v: f"{v:,.0f} G")
+df_display["총 재료비"] = df_display["총 재료비"].apply(lambda v: f"{v:,.0f} G")
+df_display["총 보상 기대값"] = df_display["총 보상 기대값"].apply(lambda v: f"{v:,.0f} G")
+df_display["손익"] = df_display["손익"].apply(lambda v: f"🟢 {v:+,.0f} G" if v > 0 else (f"🔴 {v:+,.0f} G" if v < 0 else f"⚪ {v:+,.0f} G"))
+df_display["납품 횟수"] = df_display["납품 횟수"].apply(lambda v: f"{v}회")
 
-styled = (
-    df_roi.style
-    .format({c: lambda v: f"{v:,.0f} G" for c in ["1회 재료비", "총 재료비", "총 보상 기대값"]})
-    .format({"손익": lambda v: f"{v:+,.0f} G"})
-    .map(color_profit, subset=["손익"])
-    .set_properties(**{"text-align": "right"}, subset=["1회 재료비", "총 재료비", "총 보상 기대값", "손익"])
-    .set_properties(**{"text-align": "center"}, subset=["납품 횟수"])
-)
-
-st.dataframe(styled, use_container_width=True, hide_index=True)
+st.table(df_display.reset_index(drop=True))
 
 col_refresh, col_cap = st.columns([1, 6])
 with col_refresh:
